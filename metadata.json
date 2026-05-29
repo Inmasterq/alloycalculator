@@ -1,0 +1,6 @@
+{
+  "name": "GregTech & TFC Alloy Calculator",
+  "description": "Точный калькулятор сплавов для GregTech и Terrafirmacraft с подбором пропорций пыли и жидких металлов.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
