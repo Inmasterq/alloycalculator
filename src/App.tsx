@@ -710,24 +710,24 @@ export default function App() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#080b11] bg-[radial-gradient(circle_at_center,_#121626_0%,_#080b11_100%)] text-[#e2e8f0] flex flex-col justify-between font-sans selection:bg-indigo-600/50 selection:text-white">
+    <div className="min-h-screen bg-[#070708] bg-[radial-gradient(circle_at_center,_#141416_0%,_#070708_100%)] text-[#f4f4f5] flex flex-col justify-between font-sans selection:bg-zinc-800 selection:text-white">
       
       {/* Header */}
-      <header className="h-14 border-b border-[#1c2438] flex items-center justify-between px-6 bg-[#0c0f18] sticky top-0 z-50">
+      <header className="h-14 border-b border-[#1c1c1f] flex items-center justify-between px-6 bg-[#0c0c0d] sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1] animate-pulse"></div>
-          <h1 className="text-sm font-black tracking-[0.2em] uppercase bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent flex items-center gap-2">
-            Alloy Forge System <span className="text-[#a5b4fc] text-[10px] font-mono tracking-normal lowercase hidden sm:inline">v3.3.0</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-zinc-300 shadow-[0_0_8px_#f4f4f5] animate-pulse"></div>
+          <h1 className="text-sm font-black tracking-[0.2em] uppercase text-zinc-100 flex items-center gap-2">
+            Alloy Forge System <span className="text-zinc-500 text-[10px] font-mono tracking-normal lowercase hidden sm:inline">v3.3.0</span>
           </h1>
         </div>
-        <div className="flex items-center gap-6 text-[10px] font-mono text-slate-400">
-          <div className={`flex gap-2 items-center font-bold tracking-wider ${autosaveVisible ? "text-indigo-400" : "text-emerald-400"}`}>
-            <span className={`w-2 h-2 rounded-full ${autosaveVisible ? "bg-indigo-400 animate-ping" : "bg-emerald-500"}`}></span>
+        <div className="flex items-center gap-6 text-[10px] font-mono text-zinc-400">
+          <div className={`flex gap-2 items-center font-bold tracking-wider ${autosaveVisible ? "text-zinc-400" : "text-emerald-400"}`}>
+            <span className={`w-2 h-2 rounded-full ${autosaveVisible ? "bg-zinc-400 animate-ping" : "bg-emerald-500"}`}></span>
             {autosaveVisible ? "SAVING SESSION..." : "CLOUD CONTAINER SECURE"}
           </div>
         </div>
       </header>
-
+ 
       {/* Main Core */}
       <main className="max-w-6xl mx-auto p-4 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 my-4">
         
@@ -735,14 +735,14 @@ export default function App() {
         <div className="lg:col-span-7 flex flex-col gap-6">
           
           {/* Main settings config card */}
-          <section className="bg-[#0d121f] border border-[#242b3d] rounded-xl p-5 shadow-xl relative overflow-hidden">
+          <section className="bg-[#101012] border border-[#212124] rounded-xl p-5 shadow-xl relative overflow-hidden">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 relative z-50">
-              <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <Sliders className="text-indigo-400 w-4 h-4" /> ОСНОВНЫЕ НАСТРОЙКИ ПЛАВКИ
+              <h2 className="text-xs font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                <Sliders className="text-zinc-400 w-4 h-4" /> ОСНОВНЫЕ НАСТРОЙКИ ПЛАВКИ
               </h2>
               
               {/* Perfect Mode Toggle */}
-              <label className="flex items-center gap-2 text-[10px] font-bold text-indigo-400 bg-indigo-950/20 border border-indigo-850/40 px-3 py-1.5 rounded-md cursor-pointer hover:bg-indigo-950/40 hover:border-indigo-500 transition-all select-none">
+              <label className="flex items-center gap-2 text-[10px] font-bold text-zinc-300 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-md cursor-pointer hover:bg-zinc-800 hover:border-zinc-500 transition-all select-none">
                 <input 
                   type="checkbox" 
                   checked={perfectMode}
@@ -750,22 +750,22 @@ export default function App() {
                     setPerfectMode(e.target.checked);
                     setSelectedPerfectMatchIndex(0);
                   }}
-                  className="rounded bg-[#0c0c0e] border-[#2c354e] text-indigo-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer accent-indigo-500"
+                  className="rounded bg-[#080809] border-zinc-800 text-zinc-100 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer accent-zinc-100"
                 />
-                <span className="flex items-center gap-1 uppercase tracking-wider"><Sparkles className="w-3 h-3" /> ИДЕАЛЬНЫЙ ПОДБОР</span>
+                <span className="flex items-center gap-1 uppercase tracking-wider"><Sparkles className="w-3 h-3 text-zinc-400" /> ИДЕАЛЬНЫЙ ПОДБОР</span>
               </label>
             </div>
-
+ 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 relative z-10">
               {/* Preset selection dropdown with Delete and Save buttons */}
               <div>
-                <label className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label className="flex items-center justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">
                   <span>ВЫБЕРИТЕ СПЛАВ</span>
-                  <div className="flex gap-2 text-[9px] font-bold text-indigo-400">
+                  <div className="flex gap-2 text-[9px] font-bold text-zinc-400">
                     <button 
                       type="button"
                       onClick={handleRestoreDefaultPresets}
-                      className="hover:underline flex items-center gap-0.5 cursor-pointer"
+                      className="hover:underline flex items-center gap-0.5 cursor-pointer text-zinc-300 hover:text-white"
                       title="Восстановить исходные пресеты сплавов"
                     >
                       <RotateCcw className="w-2.5 h-2.5" /> СБРОСИТЬ
@@ -777,15 +777,15 @@ export default function App() {
                     <select 
                       value={selectedPresetKey}
                       onChange={handlePresetChange}
-                      className="w-full bg-[#0d121fa8] border border-[#2c354e] rounded-lg pl-4 pr-10 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors appearance-none cursor-pointer text-xs uppercase tracking-wide font-medium"
+                      className="w-full bg-[#18181c] border border-zinc-800 rounded-lg pl-4 pr-10 py-3 text-zinc-100 focus:outline-none focus:border-zinc-500 transition-colors appearance-none cursor-pointer text-xs uppercase tracking-wide font-medium"
                     >
                       {(Object.entries(presets) as [string, MetalPreset][]).map(([key, item]) => (
-                        <option key={key} value={key} className="bg-[#0b0e17] text-gray-200">
+                        <option key={key} value={key} className="bg-[#121214] text-zinc-200">
                           {item.name}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
 
                   {/* Delete active preset button */}
@@ -793,7 +793,7 @@ export default function App() {
                     type="button"
                     onClick={handleDeletePreset}
                     disabled={Object.keys(presets).length <= 1}
-                    className="px-3 bg-red-950/20 border border-red-900/35 hover:bg-red-900/40 hover:border-red-500 text-red-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                    className="px-3 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:border-red-900/80 hover:text-red-400 text-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer"
                     title="Удалить этот сплав"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -803,7 +803,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setShowSavePresetDialog(!showSavePresetDialog)}
-                    className="px-3 bg-indigo-950/30 border border-indigo-900/35 hover:bg-indigo-900/45 hover:border-indigo-500 text-indigo-400 rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                    className="px-3 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:border-zinc-500 text-zinc-300 rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer"
                     title="Сохранить текущую сборку как новый сплав"
                   >
                     <Save className="w-4 h-4" />
@@ -812,27 +812,27 @@ export default function App() {
 
                 {/* Save Preset Dialog modal form */}
                 {showSavePresetDialog && (
-                  <div className="mt-3 p-3 bg-indigo-950/20 border border-indigo-900/40 rounded-lg animate-in slide-in-from-top-2 duration-200">
-                    <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Название нового пресета сплава:</div>
+                  <div className="mt-3 p-3 bg-zinc-900/60 border border-zinc-800 rounded-lg animate-in slide-in-from-top-2 duration-200">
+                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Название нового пресета сплава:</div>
                     <div className="flex gap-2">
                       <input 
                         type="text"
                         value={newPresetName}
                         onChange={(e) => setNewPresetName(e.target.value)}
                         placeholder="Например: Сплав Силы v2"
-                        className="flex-grow bg-[#0c0c0e] border border-[#2c354e] rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                        className="flex-grow bg-[#09090a] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500"
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveAsPreset()}
                       />
                       <button 
                         onClick={handleSaveAsPreset}
                         disabled={!newPresetName.trim()}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-slate-950 font-bold text-xs rounded transition-all disabled:opacity-45 cursor-pointer"
+                        className="px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs rounded transition-all disabled:opacity-45 cursor-pointer"
                       >
                         Сохранить
                       </button>
                       <button 
                         onClick={() => { setShowSavePresetDialog(false); setNewPresetName(""); }}
-                        className="px-2 py-1.5 hover:bg-slate-800 text-gray-400 text-xs rounded transition-all cursor-pointer"
+                        className="px-2 py-1.5 hover:bg-zinc-800 text-zinc-400 text-xs rounded transition-all cursor-pointer"
                       >
                         Отмена
                       </button>
@@ -843,7 +843,7 @@ export default function App() {
 
               {/* Target volumes inputs */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">
                   {hasPinned ? "ОЖИДАЕМЫЙ ОБЪЕМ СПЛАВА" : "ЖЕЛАЕМЫЙ ОБЪЕМ СПЛАВА (мБ)"}
                 </label>
                 <div className="relative">
@@ -853,19 +853,19 @@ export default function App() {
                     disabled={hasPinned}
                     onChange={(e) => handleTargetVolumeInputChange(e.target.value)}
                     onBlur={handleBlurEvaluateTargetVolume}
-                    className="w-full bg-[#0d121f] border border-[#2c354e] rounded-lg pl-4 pr-32 py-3 text-indigo-455 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#18181c] border border-zinc-800 rounded-lg pl-4 pr-32 py-3 text-zinc-100 focus:outline-none focus:border-zinc-500 transition-colors font-mono font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
                     {evaluateMathExpression(targetVolumeInput) !== null && targetVolumeInput.match(/[+\-*/()]/) && (
-                      <span className="text-[10px] font-mono font-bold text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-850/40">
+                      <span className="text-[10px] font-mono font-bold text-zinc-300 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700">
                         = {Math.round(evaluateMathExpression(targetVolumeInput)!)}
                       </span>
                     )}
-                    <span className="text-xs text-slate-500 font-bold font-mono">мБ</span>
+                    <span className="text-xs text-zinc-500 font-bold font-mono">мБ</span>
                   </div>
                 </div>
                 {hasPinned && (
-                  <div className="mt-1.5 text-[9px] text-indigo-400 flex items-center gap-1 font-bold bg-indigo-950/20 border border-indigo-900/30 px-2 py-1 rounded-md uppercase tracking-wider">
+                  <div className="mt-1.5 text-[9px] text-zinc-400 flex items-center gap-1 font-bold bg-zinc-950/20 border border-zinc-850/35 px-2 py-1 rounded-md uppercase tracking-wider">
                     <Calculator className="w-3.5 h-3.5 shrink-0" /> Рассчитано автоматически по весу зафиксированного компонента
                   </div>
                 )}
@@ -873,36 +873,36 @@ export default function App() {
             </div>
 
             {/* Target multiplicity configuration */}
-            <div className="pt-4 border-t border-[#242b3d]/60 grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 relative z-10">
+            <div className="pt-4 border-t border-zinc-800/85 grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 relative z-10">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">КРАТНОСТЬ ИТОГОВОГО ОБЪЕМА (мБ)</label>
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">КРАТНОСТЬ ИТОГОВОГО ОБЪЕМА (мБ)</label>
                 <div className="relative">
                   <input 
                     type="text" 
                     value={targetMultiplicityInput}
                     onChange={(e) => handleTargetMultiplicityInputChange(e.target.value)}
                     onBlur={handleBlurEvaluateTargetMultiplicity}
-                    className="w-full bg-[#0d121f] border border-[#2c354e] rounded-lg pl-4 pr-32 py-2.5 text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold text-sm"
+                    className="w-full bg-[#18181c] border border-zinc-800 rounded-lg pl-4 pr-32 py-2.5 text-zinc-100 focus:outline-none focus:border-zinc-500 transition-colors font-mono font-bold text-sm"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
                     {evaluateMathExpression(targetMultiplicityInput) !== null && targetMultiplicityInput.match(/[+\-*/()]/) && (
-                      <span className="text-[9px] font-mono font-bold text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-850/40">
+                      <span className="text-[9px] font-mono font-bold text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
                         = {Math.round(evaluateMathExpression(targetMultiplicityInput)!)}
                       </span>
                     )}
-                    <span className="text-xs text-slate-500 font-bold font-mono">мБ</span>
+                    <span className="text-xs text-zinc-500 font-bold font-mono">мБ</span>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col justify-end gap-1.5">
-                <span className="text-[9px] text-[#8e9bb8] uppercase font-bold tracking-widest">БЫСТРЫЕ ПРЕСЕТЫ КРАТНОСТИ</span>
+                <span className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest">БЫСТРЫЕ ПРЕСЕТЫ КРАТНОСТИ</span>
                 <div className="flex gap-1.5 flex-wrap">
                   <button 
                     onClick={() => { setTargetMultiplicity(1); setTargetMultiplicityInput("1"); setSelectedPerfectMatchIndex(0); }} 
                     className={`text-[9px] px-2.5 py-1.5 rounded transition-all font-bold tracking-wider border cursor-pointer uppercase ${
                       targetMultiplicity === 1 
-                        ? 'bg-indigo-600 text-[#0c0f18] border-indigo-700 shadow-[0_0_8px_rgba(99,102,241,0.4)]' 
-                        : 'bg-[#0f1424] hover:bg-[#1a213b] text-slate-350 border-[#242b3d] hover:border-indigo-500'
+                        ? 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-[0_0_8px_rgba(255,255,255,0.15)]' 
+                        : 'bg-[#18181c] hover:bg-[#222226] text-zinc-300 border-zinc-800 hover:border-zinc-500'
                     }`}
                   >
                     ЛЮБАЯ (1)
@@ -911,8 +911,8 @@ export default function App() {
                     onClick={() => { setTargetMultiplicity(100); setTargetMultiplicityInput("100"); setSelectedPerfectMatchIndex(0); }} 
                     className={`text-[9px] px-2.5 py-1.5 rounded transition-all font-bold tracking-wider border cursor-pointer uppercase ${
                       targetMultiplicity === 100 
-                        ? 'bg-indigo-600 text-[#0c0f18] border-indigo-700 shadow-[0_0_8px_rgba(99,102,241,0.4)]' 
-                        : 'bg-[#0f1424] hover:bg-[#1a213b] text-slate-350 border-[#242b3d] hover:border-indigo-500'
+                        ? 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-[0_0_8px_rgba(255,255,255,0.15)]' 
+                        : 'bg-[#18181c] hover:bg-[#222226] text-zinc-300 border-zinc-800 hover:border-zinc-500'
                     }`}
                   >
                     СЛИTOK GT (100)
@@ -921,8 +921,8 @@ export default function App() {
                     onClick={() => { setTargetMultiplicity(144); setTargetMultiplicityInput("144"); setSelectedPerfectMatchIndex(0); }} 
                     className={`text-[9px] px-2.5 py-1.5 rounded transition-all font-bold tracking-wider border cursor-pointer uppercase ${
                       targetMultiplicity === 144 
-                        ? 'bg-indigo-600 text-[#0c0f18] border-indigo-700 shadow-[0_0_8px_rgba(99,102,241,0.4)]' 
-                        : 'bg-[#0f1424] hover:bg-[#1a213b] text-slate-350 border-[#242b3d] hover:border-indigo-500'
+                        ? 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-[0_0_8px_rgba(255,255,255,0.15)]' 
+                        : 'bg-[#18181c] hover:bg-[#222226] text-zinc-300 border-zinc-800 hover:border-zinc-500'
                     }`}
                   >
                     СЛИTOK TFC (144)
@@ -931,8 +931,8 @@ export default function App() {
                     onClick={() => { setTargetMultiplicity(2016); setTargetMultiplicityInput("2016"); setSelectedPerfectMatchIndex(0); }} 
                     className={`text-[9px] px-2.5 py-1.5 rounded transition-all font-bold tracking-wider border cursor-pointer uppercase ${
                       targetMultiplicity === 2016 
-                        ? 'bg-indigo-600 text-[#0c0f18] border-indigo-700 shadow-[0_0_8px_rgba(99,102,241,0.4)]' 
-                        : 'bg-[#0f1424] hover:bg-[#1a213b] text-slate-350 border-[#242b3d] hover:border-indigo-500'
+                        ? 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-[0_0_8px_rgba(255,255,255,0.15)]' 
+                        : 'bg-[#18181c] hover:bg-[#222226] text-zinc-300 border-zinc-800 hover:border-zinc-500'
                     }`}
                   >
                     СОСУД (2016)
@@ -943,9 +943,9 @@ export default function App() {
 
             {/* Perfect mode interactive selector list */}
             {perfectMode && (
-              <div className="mt-4 pt-4 border-t border-[#242b3d] transition-all relative z-10">
+              <div className="mt-4 pt-4 border-t border-zinc-800 transition-all relative z-10">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-                  <label className="block text-[10px] font-bold tracking-wider text-indigo-455 uppercase">
+                  <label className="block text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
                     <span className="flex items-center gap-1">
                       <Layers className="w-3.5 h-3.5" /> ТОЧНЫЕ ПРОПОРЦИИ ДЛЯ СПЛАВА (
                       <em className="font-mono font-bold text-white underline not-italic">{derivedTargetVolume}</em> мБ):
@@ -953,18 +953,18 @@ export default function App() {
                   </label>
                   
                   {/* Sorting dropdown */}
-                  <div className="flex items-center gap-1.5 bg-[#090d19] border border-[#242b3d] px-2 py-1 rounded">
+                  <div className="flex items-center gap-1.5 bg-[#141416] border border-zinc-800 px-2 py-1 rounded">
                     <span className="text-[9px] text-[#8e9bb8] uppercase font-bold tracking-wider">Сортировать по:</span>
                     <select 
-                      value={perfectSortBy}
-                      onChange={(e) => {
-                        setPerfectSortBy(e.target.value as any);
-                        setSelectedPerfectMatchIndex(0);
-                      }}
-                      className="bg-transparent text-[9px] text-indigo-400 font-bold focus:outline-none cursor-pointer tracking-wider"
+                       value={perfectSortBy}
+                       onChange={(e) => {
+                         setPerfectSortBy(e.target.value as any);
+                         setSelectedPerfectMatchIndex(0);
+                       }}
+                       className="bg-[#141416] text-[9px] text-zinc-300 font-bold focus:outline-none cursor-pointer tracking-wider"
                     >
-                      <option value="itemCount" className="bg-[#0b0e17]">МИНИМУМ КУЧЕК (БЫСТРЕЕ)</option>
-                      <option value="deviation" className="bg-[#0b0e17]">БЛИЖЕ К ЖЕЛАЕМЫМ %</option>
+                      <option value="itemCount" className="bg-[#121214]">МИНИМУМ КУЧЕК (БЫСТРЕЕ)</option>
+                      <option value="deviation" className="bg-[#121214]">БЛИЖЕ К ЖЕЛАЕМЫМ %</option>
                     </select>
                   </div>
                 </div>
@@ -988,21 +988,21 @@ export default function App() {
                           onClick={() => setSelectedPerfectMatchIndex(idx)}
                           className={`px-3.5 py-2.5 text-left rounded border transition-all duration-150 flex flex-col justify-center relative overflow-hidden select-none cursor-pointer ${
                             isSelected 
-                              ? 'bg-indigo-600 border-indigo-700 text-[#0c0f18] shadow-[0_0_12px_rgba(99,102,241,0.35)] font-bold' 
-                              : 'bg-[#0b0e17] border-[#242b3d] hover:border-[#2f3957] text-[#8e9bb8] hover:text-white'
+                              ? 'bg-zinc-100 border-zinc-200 text-zinc-950 shadow-[0_0_12px_rgba(255,255,255,0.15)] font-bold' 
+                              : 'bg-[#141416] border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
                           }`}
                         >
                           <div className="flex justify-between items-center w-full gap-2">
                             <span className="text-xs font-bold uppercase tracking-wide">{pctLabel}</span>
                             <span className={`text-[9px] px-1.5 py-1 rounded font-bold uppercase shrink-0 ${
-                              isSelected ? 'bg-slate-950/20 text-slate-950 border border-slate-950/30' : 'bg-[#111114] text-indigo-400 border border-[#242b3d]'
+                              isSelected ? 'bg-zinc-200/40 text-zinc-950 border border-zinc-300' : 'bg-[#19191c] text-zinc-400 border border-zinc-800'
                             }`}>
                               Досыпать: {match.totalItems} шт.
                             </span>
                           </div>
                           <div className="flex justify-between text-[10px] opacity-80 mt-1.5 font-mono">
                             <span>Пыль добора: {match.components.map((c: any) => c + ' мБ').join(' + ')}</span>
-                            <span className={`font-bold ${isSelected ? 'text-slate-950' : 'text-indigo-400'}`}>
+                            <span className={`font-bold ${isSelected ? 'text-zinc-950' : 'text-zinc-400'}`}>
                               Итого: {match.totalVolume} мБ
                             </span>
                           </div>
@@ -1015,7 +1015,7 @@ export default function App() {
             )}
 
             {/* Existing hot/molten liquid inside the crucible */}
-            <div className="mt-4 pt-4 border-t border-[#242b3d]/60 grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+            <div className="mt-4 pt-4 border-t border-zinc-800/85 grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
               <div>
                 <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#8e9bb8] mb-2 cursor-pointer select-none">
                   <input 
@@ -1026,7 +1026,7 @@ export default function App() {
                       if (!e.target.checked) setExistingMetalVolume(0);
                       setSelectedPerfectMatchIndex(0);
                     }}
-                    className="rounded bg-[#0c0c0e] border-[#2c354e] text-indigo-500 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer accent-indigo-500"
+                    className="rounded bg-[#08080a] border-zinc-800 text-zinc-200 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer accent-zinc-200"
                   />
                   <span>В сосуде уже есть жидкий металл?</span>
                 </label>
@@ -1037,22 +1037,22 @@ export default function App() {
                       value={existingMetalVolumeInput}
                       onChange={(e) => handleExistingMetalVolumeInputChange(e.target.value)}
                       onBlur={handleBlurEvaluateExistingMetal}
-                      className="w-full bg-[#0d121f] border border-[#2c354e] rounded-lg pl-4 pr-32 py-2.5 text-sm text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold"
+                      className="w-full bg-[#18181c] border border-zinc-805 rounded-lg pl-4 pr-32 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors font-mono font-bold"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
                       {evaluateMathExpression(existingMetalVolumeInput) !== null && existingMetalVolumeInput.match(/[+\-*/()]/) && (
-                        <span className="text-[9px] font-mono font-bold text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-850/40 font-bold">
+                        <span className="text-[9px] font-mono font-bold text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
                           = {Math.round(evaluateMathExpression(existingMetalVolumeInput)!)}
                         </span>
                       )}
-                      <span className="text-xs text-slate-500 font-bold font-mono">мБ</span>
+                      <span className="text-xs text-zinc-500 font-bold font-mono">мБ</span>
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center justify-end md:text-right">
-                <span className="text-[10px] text-slate-450 uppercase tracking-wide italic block leading-normal">
+                <span className="text-[10px] text-zinc-400 uppercase tracking-wide italic block leading-normal">
                   Поддерживает как добавление твердого добора пыли, так и вычисление недостающего сырья с учетом жидкой фазы
                 </span>
               </div>
@@ -1060,14 +1060,14 @@ export default function App() {
           </section>
 
           {/* Core alloys component card lists */}
-          <section className="bg-[#0d121f] border border-[#242b3d] rounded-xl p-5 shadow-xl flex-grow relative overflow-hidden">
+          <section className="bg-[#101012] border border-[#212124] rounded-xl p-5 shadow-xl flex-grow relative overflow-hidden">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <Settings className="text-indigo-400 w-4 h-4" /> КОМПОНЕНТЫ СПЛАВА
+              <h2 className="text-xs font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                <Settings className="text-zinc-400 w-4 h-4" /> КОМПОНЕНТЫ СПЛАВА
               </h2>
               <button 
                 onClick={handleAddMetal}
-                className="text-[10px] uppercase tracking-wider bg-indigo-600 text-[#0c0f18] px-3.5 py-2 rounded font-extrabold hover:bg-indigo-500 transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
+                className="text-[10px] uppercase tracking-wider bg-zinc-100 text-zinc-950 px-3.5 py-2 rounded font-extrabold hover:bg-white transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_8px_rgba(255,255,255,0.08)]"
               >
                 <Plus className="w-3.5 h-3.5" /> Добавить металл
               </button>
@@ -1078,42 +1078,42 @@ export default function App() {
               {currentMetals.map((metal, index) => (
                 <div 
                   key={metal.id}
-                  className={`bg-[#0d111ca9] border rounded p-4 flex flex-col gap-3 relative transition-all duration-200 ${
+                  className={`border rounded p-4 flex flex-col gap-3 relative transition-all duration-200 ${
                     metal.isPinned 
-                      ? 'border-indigo-550/60 shadow-md shadow-indigo-550/5 bg-[#0e1424]' 
-                      : 'border-[#242b3d]/85 hover:border-[#2f3957]'
+                      ? 'border-zinc-700 shadow-md shadow-zinc-900/10 bg-[#161619]' 
+                      : 'border-zinc-800 bg-[#121214] hover:border-zinc-700'
                   }`}
                 >
                   {/* Top bar controls */}
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-2 border-b border-[#242b3d]/60">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-2 border-b border-zinc-800">
                     <div className="flex items-center gap-2">
-                      <span className={`w-3.5 h-3.5 rounded-full bg-gradient-to-tr ${metal.color || 'from-slate-500 to-slate-600'} shadow`}></span>
+                      <span className={`w-3.5 h-3.5 rounded-full bg-gradient-to-tr ${metal.color || 'from-[#4b5563] to-[#6b7280]'} shadow`}></span>
                       <input 
                         type="text" 
                         value={metal.name}
                         onChange={(e) => handleUpdateMetalName(index, e.target.value)}
-                        className="bg-transparent border-b border-transparent hover:border-[#384366] focus:border-indigo-500 text-sm font-bold text-gray-150 px-1.5 focus:outline-none transition-colors uppercase tracking-wider"
+                        className="bg-transparent border-b border-transparent hover:border-zinc-800 focus:border-zinc-500 text-sm font-bold text-zinc-200 px-1.5 focus:outline-none transition-colors uppercase tracking-wider"
                       />
                     </div>
                     
                     <div className="flex items-center gap-3">
                       {/* Pinned weight lock */}
-                      <label className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold uppercase tracking-wider cursor-pointer select-none">
+                      <label className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold uppercase tracking-wider cursor-pointer select-none">
                         <input 
                           type="checkbox" 
                           checked={metal.isPinned}
                           onChange={(e) => handleTogglePinMetal(index, e.target.checked)}
-                          className="rounded bg-[#0c0c0e] border-[#2c354e] text-indigo-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer accent-indigo-500"
+                          className="rounded bg-[#08080a] border-zinc-800 text-zinc-100 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer accent-zinc-200"
                         />
                         <span className="flex items-center gap-1">
-                          <Lock className="w-3 h-3 text-indigo-400" /> Фиксировать
+                          <Lock className="w-3 h-3 text-zinc-400" /> Фиксировать
                         </span>
                       </label>
 
                       {/* Remove item */}
                       <button 
                         onClick={() => handleRemoveMetal(index)}
-                        className="text-xs text-red-400/80 hover:text-red-300 transition-colors p-1 cursor-pointer"
+                        className="text-xs text-red-400 hover:text-red-300 transition-colors p-1 cursor-pointer"
                         title="Удалить металл"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1123,18 +1123,18 @@ export default function App() {
 
                   {/* Manual lock box */}
                   {metal.isPinned && (
-                    <div className="bg-indigo-950/10 border border-indigo-900/30 p-3.5 rounded flex flex-col gap-3 animate-in slide-in-from-top-1 duration-200">
+                    <div className="bg-zinc-900/45 border border-zinc-800 p-3.5 rounded flex flex-col gap-3 animate-in slide-in-from-top-1 duration-200">
                       <div className="flex justify-between items-center">
-                        <span className="text-[9px] uppercase tracking-widest text-[#a5b4fc] font-bold flex items-center gap-1">
-                          <Scale className="w-3.5 h-3.5 text-indigo-400" /> Заданный вес компонента:
+                        <span className="text-[9px] uppercase tracking-widest text-zinc-300 font-bold flex items-center gap-1">
+                          <Scale className="w-3.5 h-3.5 text-zinc-400" /> Заданный вес компонента:
                         </span>
                         
                         {/* Unit selector */}
-                        <div className="flex gap-1 text-[9px] bg-[#0c0c0e] p-0.5 rounded border border-[#2c354e] font-bold font-mono">
+                        <div className="flex gap-1 text-[9px] bg-[#080809] p-0.5 rounded border border-zinc-800 font-bold font-mono">
                           <button 
                             onClick={() => handleSetPinnedInputType(index, 'mb')} 
                             className={`px-2 py-0.5 rounded transition-all cursor-pointer uppercase ${
-                              metal.pinnedInputType === 'mb' ? 'bg-indigo-600 text-[#0c0f18] font-bold' : 'text-[#8e9bb8] hover:text-white'
+                              metal.pinnedInputType === 'mb' ? 'bg-zinc-100 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-white'
                             }`}
                           >
                             В мБ
@@ -1142,7 +1142,7 @@ export default function App() {
                           <button 
                             onClick={() => handleSetPinnedInputType(index, 'dust')} 
                             className={`px-2 py-0.5 rounded transition-all cursor-pointer uppercase ${
-                              metal.pinnedInputType === 'dust' ? 'bg-indigo-600 text-[#0c0f18] font-bold' : 'text-[#8e9bb8] hover:text-white'
+                              metal.pinnedInputType === 'dust' ? 'bg-zinc-100 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-white'
                             }`}
                           >
                             Пылью
@@ -1158,68 +1158,68 @@ export default function App() {
                             value={metal.pinnedVolumeInput ?? metal.pinnedVolume.toString()}
                             onChange={(e) => handleUpdatePinnedVolume(index, e.target.value)}
                             onBlur={() => handleBlurEvaluatePinnedVolume(index)}
-                            className="w-full bg-[#0d121f] border border-[#2c354e] rounded px-3 py-2 text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold"
+                            className="w-full bg-[#18181c] border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors font-mono font-bold"
                           />
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
                             {evaluateMathExpression(metal.pinnedVolumeInput || "") !== null && (metal.pinnedVolumeInput || "").match(/[+\-*/()]/) && (
-                              <span className="text-[9px] font-mono font-bold text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-850/40">
+                              <span className="text-[9px] font-mono font-bold text-zinc-300 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700">
                                 = {Math.round(evaluateMathExpression(metal.pinnedVolumeInput || "")!)}
                               </span>
                             )}
-                            <span className="text-[10px] text-slate-500 font-bold font-mono">мБ</span>
+                            <span className="text-[10px] text-zinc-500 font-bold font-mono">мБ</span>
                           </div>
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#0b0e17] border border-[#242b3d] p-1.5 rounded text-center">
-                            <span className="text-[8px] uppercase text-[#8e9bb8] font-bold tracking-wider block mb-1">Пыль</span>
+                          <div className="bg-[#141416] border border-zinc-805 p-1.5 rounded text-center">
+                            <span className="text-[8px] uppercase text-zinc-400 font-bold tracking-wider block mb-1">Пыль</span>
                             <div className="flex items-center justify-between gap-1">
                               <button 
                                 onClick={() => handleAdjustPinnedDust(index, 'pinnedDustNorm', -1)} 
-                                className="w-5 h-5 rounded bg-[#0d121f] border border-[#242b3d] text-[#8e9bb8] hover:text-white text-[10px] font-bold cursor-pointer hover:border-indigo-500 transition-colors"
+                                className="w-5 h-5 rounded bg-[#18181c] border border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold cursor-pointer hover:border-zinc-500 transition-colors"
                               >
                                 -
                               </button>
                               <span className="font-mono font-bold text-white text-xs">{metal.pinnedDustNorm}</span>
                               <button 
                                 onClick={() => handleAdjustPinnedDust(index, 'pinnedDustNorm', 1)} 
-                                className="w-5 h-5 rounded bg-[#0d121f] border border-[#242b3d] text-[#8e9bb8] hover:text-white text-[10px] font-bold cursor-pointer hover:border-indigo-500 transition-colors"
+                                className="w-5 h-5 rounded bg-[#18181c] border border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold cursor-pointer hover:border-zinc-500 transition-colors"
                               >
                                 +
                               </button>
                             </div>
                           </div>
-                          <div className="bg-[#0b0e17] border border-[#242b3d] p-1.5 rounded text-center">
-                            <span className="text-[8px] uppercase text-[#8e9bb8] font-bold tracking-wider block mb-1">Малая</span>
+                          <div className="bg-[#141416] border border-zinc-805 p-1.5 rounded text-center">
+                            <span className="text-[8px] uppercase text-zinc-400 font-bold tracking-wider block mb-1">Малая</span>
                             <div className="flex items-center justify-between gap-1">
                               <button 
                                 onClick={() => handleAdjustPinnedDust(index, 'pinnedDustSmall', -1)} 
-                                className="w-5 h-5 rounded bg-[#0d121f] border border-[#242b3d] text-[#8e9bb8] hover:text-white text-[10px] font-bold cursor-pointer hover:border-indigo-500 transition-colors"
+                                className="w-5 h-5 rounded bg-[#18181c] border border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold cursor-pointer hover:border-zinc-500 transition-colors"
                               >
                                 -
                               </button>
                               <span className="font-mono font-bold text-white text-xs">{metal.pinnedDustSmall}</span>
                               <button 
                                 onClick={() => handleAdjustPinnedDust(index, 'pinnedDustSmall', 1)} 
-                                className="w-5 h-5 rounded bg-[#0d121f] border border-[#242b3d] text-[#8e9bb8] hover:text-white text-[10px] font-bold cursor-pointer hover:border-indigo-500 transition-colors"
+                                className="w-5 h-5 rounded bg-[#18181c] border border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold cursor-pointer hover:border-zinc-500 transition-colors"
                               >
                                 +
                               </button>
                             </div>
                           </div>
-                          <div className="bg-[#0b0e17] border border-[#242b3d] p-1.5 rounded text-center">
-                            <span className="text-[8px] uppercase text-[#8e9bb8] font-bold tracking-wider block mb-1">Кроха</span>
+                          <div className="bg-[#141416] border border-zinc-805 p-1.5 rounded text-center">
+                            <span className="text-[8px] uppercase text-zinc-400 font-bold tracking-wider block mb-1">Кроха</span>
                             <div className="flex items-center justify-between gap-1">
                               <button 
                                 onClick={() => handleAdjustPinnedDust(index, 'pinnedDustTiny', -1)} 
-                                className="w-5 h-5 rounded bg-[#0d121f] border border-[#242b3d] text-[#8e9bb8] hover:text-white text-[10px] font-bold cursor-pointer hover:border-indigo-500 transition-colors"
+                                className="w-5 h-5 rounded bg-[#18181c] border border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold cursor-pointer hover:border-zinc-500 transition-colors"
                               >
                                 -
                               </button>
                               <span className="font-mono font-bold text-white text-xs">{metal.pinnedDustTiny}</span>
                               <button 
                                 onClick={() => handleAdjustPinnedDust(index, 'pinnedDustTiny', 1)} 
-                                className="w-5 h-5 rounded bg-[#0d121f] border border-[#242b3d] text-[#8e9bb8] hover:text-white text-[10px] font-bold cursor-pointer hover:border-indigo-500 transition-colors"
+                                className="w-5 h-5 rounded bg-[#18181c] border border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-bold cursor-pointer hover:border-zinc-500 transition-colors"
                               >
                                 +
                               </button>
@@ -1228,9 +1228,9 @@ export default function App() {
                         </div>
                       )}
 
-                      <div className="text-[10px] text-gray-400 flex justify-between items-center px-1 font-mono">
+                      <div className="text-[10px] text-zinc-400 flex justify-between items-center px-1 font-mono">
                         <span>Эквивалент в жидкости:</span>
-                        <span className="font-bold text-indigo-400">{getPinnedMetalEquivalentMb(metal)} мБ</span>
+                        <span className="font-bold text-zinc-300">{getPinnedMetalEquivalentMb(metal)} мБ</span>
                       </div>
                     </div>
                   )}
@@ -1238,34 +1238,34 @@ export default function App() {
                   {/* Percentage configurations */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                     <div>
-                      <label className="block text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-1">Мин % в сплаве</label>
+                      <label className="block text-[9px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Мин % в сплаве</label>
                       <div className="relative">
                         <input 
                           type="text" 
                           value={metal.minPercentInput ?? metal.minPercent.toString()} 
                           onChange={(e) => handleUpdatePercentBound(index, 'minPercent', e.target.value)}
                           onBlur={() => handleBlurEvaluatePercentBound(index, 'minPercent')}
-                          className="w-full bg-[#0d121f] border border-[#2c354e] rounded px-2.5 py-1 text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold text-center"
+                          className="w-full bg-[#18181c] border border-zinc-850 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors font-mono font-bold text-center"
                         />
                         {evaluateMathExpression(metal.minPercentInput || "") !== null && (metal.minPercentInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-indigo-455 bg-[#0b0e17] px-1 py-0.5 rounded border border-indigo-850/30 whitespace-nowrap">
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
                             = {Math.round(evaluateMathExpression(metal.minPercentInput || "")!)}%
                           </div>
                         )}
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-1">Макс % в сплаве</label>
+                      <label className="block text-[9px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Макс % в сплаве</label>
                       <div className="relative">
                         <input 
                           type="text" 
                           value={metal.maxPercentInput ?? metal.maxPercent.toString()} 
                           onChange={(e) => handleUpdatePercentBound(index, 'maxPercent', e.target.value)}
                           onBlur={() => handleBlurEvaluatePercentBound(index, 'maxPercent')}
-                          className="w-full bg-[#0d121f] border border-[#2c354e] rounded px-2.5 py-1 text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors font-mono font-bold text-center"
+                          className="w-full bg-[#18181c] border border-zinc-850 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors font-mono font-bold text-center"
                         />
                         {evaluateMathExpression(metal.maxPercentInput || "") !== null && (metal.maxPercentInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-indigo-455 bg-[#0b0e17] px-1 py-0.5 rounded border border-indigo-850/30 whitespace-nowrap">
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
                             = {Math.round(evaluateMathExpression(metal.maxPercentInput || "")!)}%
                           </div>
                         )}
@@ -1280,7 +1280,7 @@ export default function App() {
                           max="100" 
                           value={metal.defaultPercent} 
                           onChange={(e) => handleUpdateTargetPercent(index, e.target.value)}
-                          className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                          className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-200"
                         />
                         <input 
                           type="number" 
@@ -1288,14 +1288,14 @@ export default function App() {
                           max="100" 
                           value={metal.defaultPercent} 
                           onChange={(e) => handleUpdateTargetPercent(index, e.target.value)}
-                          className="w-14 bg-[#0d121f] border border-[#2c354e] rounded text-center px-1 py-0.5 text-xs text-indigo-400 font-bold font-mono"
+                          className="w-14 bg-[#18181c] border border-zinc-800 rounded text-center px-1 py-0.5 text-xs text-zinc-300 font-bold font-mono"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Dust volume custom calibration ratios */}
-                  <div className="bg-[#0b0e17] p-3 rounded border border-[#242b3d] grid grid-cols-3 gap-3">
+                  <div className="bg-[#141416] p-3 rounded border border-zinc-805 grid grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Пыль (1.0)</label>
                       <div className="relative">
@@ -1304,14 +1304,14 @@ export default function App() {
                           value={metal.dustNormInput ?? metal.dustNorm.toString()} 
                           onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustNorm', e.target.value)}
                           onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustNorm')}
-                          className="w-full bg-[#0d121f] border border-[#2c354e] rounded px-2 py-1 text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors text-center font-bold font-mono"
+                          className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
                         />
                         {evaluateMathExpression(metal.dustNormInput || "") !== null && (metal.dustNormInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-indigo-444 bg-[#0b0e17] px-1 py-0.5 rounded border border-indigo-850/30 whitespace-nowrap">
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
                             = {Math.round(evaluateMathExpression(metal.dustNormInput || "")!)}
                           </div>
                         )}
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-600 font-bold font-mono">мБ</span>
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600 font-bold font-mono">мБ</span>
                       </div>
                     </div>
                     <div>
@@ -1322,14 +1322,14 @@ export default function App() {
                           value={metal.dustSmallInput ?? metal.dustSmall.toString()} 
                           onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustSmall', e.target.value)}
                           onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustSmall')}
-                          className="w-full bg-[#0d121f] border border-[#2c354e] rounded px-2 py-1 text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors text-center font-bold font-mono"
+                          className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
                         />
                         {evaluateMathExpression(metal.dustSmallInput || "") !== null && (metal.dustSmallInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-indigo-444 bg-[#0b0e17] px-1 py-0.5 rounded border border-indigo-850/30 whitespace-nowrap">
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
                             = {Math.round(evaluateMathExpression(metal.dustSmallInput || "")!)}
                           </div>
                         )}
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-600 font-bold font-mono">мБ</span>
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600 font-bold font-mono">мБ</span>
                       </div>
                     </div>
                     <div>
@@ -1340,14 +1340,14 @@ export default function App() {
                           value={metal.dustTinyInput ?? metal.dustTiny.toString()} 
                           onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustTiny', e.target.value)}
                           onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustTiny')}
-                          className="w-full bg-[#0d121f] border border-[#2c354e] rounded px-2 py-1 text-xs text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors text-center font-bold font-mono"
+                          className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
                         />
                         {evaluateMathExpression(metal.dustTinyInput || "") !== null && (metal.dustTinyInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-indigo-444 bg-[#0b0e17] px-1 py-0.5 rounded border border-indigo-850/30 whitespace-nowrap">
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
                             = {Math.round(evaluateMathExpression(metal.dustTinyInput || "")!)}
                           </div>
                         )}
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-600 font-bold font-mono">мБ</span>
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600 font-bold font-mono">мБ</span>
                       </div>
                     </div>
                   </div>
@@ -1355,7 +1355,7 @@ export default function App() {
               ))}
 
               {currentMetals.length === 0 && (
-                <div className="text-center py-8 text-[#8e9bb8] text-xs font-bold uppercase tracking-widest border border-dashed border-[#242b3d] bg-[#0c0c0e]/30 rounded">
+                <div className="text-center py-8 text-zinc-500 text-xs font-bold uppercase tracking-widest border border-dashed border-zinc-800 bg-[#08080a]/30 rounded">
                   Нет добавленных металлов. Используйте кнопку добавления в заголовке.
                 </div>
               )}
@@ -1367,22 +1367,22 @@ export default function App() {
         <div className="lg:col-span-5 flex flex-col gap-6">
           
           {/* Active recipe output stats */}
-          <section className="bg-[#0d121f] border border-[#242b3d] rounded-xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[420px]">
+          <section className="bg-[#101012] border border-[#212124] rounded-xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[420px]">
             {/* Ambient decorations blobs */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-violet-555/3 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-800/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-zinc-800/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="relative z-10">
-              <div className="flex justify-between items-center pb-4 border-b border-[#242b3d]/60 mb-5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8e9bb8]">Результаты Расчета</span>
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800 mb-5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Результаты Расчета</span>
                 
                 {actualTotalCombined === derivedTargetVolume ? (
                   <span className="px-2.5 py-1 text-[9px] uppercase tracking-wider rounded font-bold bg-[#0d2219] border border-emerald-800/80 text-emerald-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Идеально
                   </span>
                 ) : (
-                  <span className="px-2.5 py-1 text-[9px] uppercase tracking-wider rounded font-bold bg-[#141d33] border border-indigo-900 text-indigo-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-550 animate-pulse"></span> Добор пыли
+                  <span className="px-2.5 py-1 text-[9px] uppercase tracking-wider rounded font-bold bg-[#18181c] border border-zinc-700 text-zinc-300 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse"></span> Добор пыли
                   </span>
                 )}
               </div>
@@ -1397,26 +1397,26 @@ export default function App() {
                   const validRatio = ratioPercent >= res.minPercent && ratioPercent <= res.maxPercent;
 
                   return (
-                    <div key={idx} className="bg-[#0b0e17] border border-[#242b3d] rounded p-4 flex flex-col gap-3">
+                    <div key={idx} className="bg-[#141416] border border-zinc-805 rounded p-4 flex flex-col gap-3">
                       <div className="flex justify-between items-start gap-2">
                         <div>
-                          <h4 className="text-xs font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full bg-gradient-to-tr ${res.metal.color || 'from-slate-500 to-slate-600'} shadow`}></span>
+                          <h4 className="text-xs font-bold text-zinc-200 uppercase tracking-widest flex items-center gap-2">
+                            <span className={`w-2.5 h-2.5 rounded-full bg-gradient-to-tr ${res.metal.color || 'from-[#4b5563] to-[#6b7280]'} shadow`}></span>
                             {res.metal.name}
                           </h4>
-                          <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider block">
+                          <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-wider block">
                             Доля:{" "}
                             <span className={`font-bold font-mono ${validRatio ? 'text-emerald-400' : 'text-red-400'}`}>
                               {ratioPercent.toFixed(1)}%
                             </span>{" "}
-                            <span className="text-gray-500 text-[9px] tracking-normal font-sans">(Допуск: {res.minPercent}-{res.maxPercent}%)</span>
+                            <span className="text-zinc-500 text-[9px] tracking-normal font-sans">(Допуск: {res.minPercent}-{res.maxPercent}%)</span>
                           </p>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-extrabold text-indigo-400 font-mono block">
+                          <span className="text-xs font-extrabold text-zinc-300 font-mono block">
                             Досыпать: +{sol.totalVal} мБ
                           </span>
-                          <span className="text-[9px] text-[#8e9bb8] uppercase font-mono font-bold block">
+                          <span className="text-[9px] text-zinc-500 uppercase font-mono font-bold block">
                             цель: {res.targetMb} мБ
                           </span>
                         </div>
@@ -1424,23 +1424,23 @@ export default function App() {
 
                       {/* Dust portions breakdown boxes */}
                       <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono select-none">
-                        <div className={`p-2 rounded bg-[#0d121f] border border-[#1e2436] transition-all ${
-                          sol.norm > 0 ? 'opacity-100 ring-1 ring-indigo-500/35 z-10 scale-[1.02]' : 'opacity-35'
+                        <div className={`p-2 rounded bg-[#18181c] border border-zinc-800 transition-all ${
+                          sol.norm > 0 ? 'opacity-100 ring-1 ring-zinc-500/35 z-10 scale-[1.02]' : 'opacity-35'
                         }`}>
-                          <span className={`block text-base font-extrabold ${sol.norm > 0 ? 'text-indigo-400' : 'text-slate-600'}`}>{sol.norm}</span>
-                          <span className="text-[8px] text-gray-500 uppercase font-semibold">Пыль</span>
+                          <span className={`block text-base font-extrabold ${sol.norm > 0 ? 'text-zinc-200' : 'text-zinc-650'}`}>{sol.norm}</span>
+                          <span className="text-[8px] text-zinc-500 uppercase font-semibold">Пыль</span>
                         </div>
-                        <div className={`p-2 rounded bg-[#0d121f] border border-[#1e2436] transition-all ${
-                          sol.small > 0 ? 'opacity-100 ring-1 ring-indigo-500/35 z-10 scale-[1.02]' : 'opacity-35'
+                        <div className={`p-2 rounded bg-[#18181c] border border-zinc-800 transition-all ${
+                          sol.small > 0 ? 'opacity-100 ring-1 ring-zinc-500/35 z-10 scale-[1.02]' : 'opacity-35'
                         }`}>
-                          <span className={`block text-base font-extrabold ${sol.small > 0 ? 'text-indigo-400' : 'text-slate-600'}`}>{sol.small}</span>
-                          <span className="text-[8px] text-gray-500 uppercase font-semibold">Малая</span>
+                          <span className={`block text-base font-extrabold ${sol.small > 0 ? 'text-zinc-200' : 'text-zinc-650'}`}>{sol.small}</span>
+                          <span className="text-[8px] text-zinc-500 uppercase font-semibold">Малая</span>
                         </div>
-                        <div className={`p-2 rounded bg-[#0d121f] border border-[#1e2436] transition-all ${
-                          sol.tiny > 0 ? 'opacity-100 ring-1 ring-indigo-500/35 z-10 scale-[1.02]' : 'opacity-35'
+                        <div className={`p-2 rounded bg-[#18181c] border border-zinc-800 transition-all ${
+                          sol.tiny > 0 ? 'opacity-100 ring-1 ring-zinc-500/35 z-10 scale-[1.02]' : 'opacity-35'
                         }`}>
-                          <span className={`block text-base font-extrabold ${sol.tiny > 0 ? 'text-indigo-400' : 'text-slate-600'}`}>{sol.tiny}</span>
-                          <span className="text-[8px] text-gray-500 uppercase font-semibold">Кроха</span>
+                          <span className={`block text-base font-extrabold ${sol.tiny > 0 ? 'text-zinc-200' : 'text-zinc-650'}`}>{sol.tiny}</span>
+                          <span className="text-[8px] text-zinc-500 uppercase font-semibold">Кроха</span>
                         </div>
                       </div>
                     </div>
@@ -1448,7 +1448,7 @@ export default function App() {
                 })}
 
                 {currentMetals.length === 0 && (
-                  <div className="text-center py-10 text-gray-500 text-xs font-bold uppercase tracking-widest border border-dashed border-[#242b3d] rounded bg-[#0b0e17]">
+                  <div className="text-center py-10 text-zinc-500 text-xs font-bold uppercase tracking-widest border border-dashed border-zinc-805 rounded bg-[#141416]">
                     Ожидание входных данных компонентов...
                   </div>
                 )}
@@ -1456,20 +1456,20 @@ export default function App() {
             </div>
 
             {/* Bottom aggregate metrics info */}
-            <div className="mt-6 pt-5 border-t border-[#242b3d]/60 relative z-10">
+            <div className="mt-6 pt-5 border-t border-zinc-800 relative z-10">
               <div className="grid grid-cols-2 gap-4 select-none">
-                <div className="bg-[#0b0e17] p-3 rounded border border-[#242b3d] text-center">
+                <div className="bg-[#141416] p-3 rounded border border-zinc-805 text-center">
                   <span className="block text-[#8e9bb8] text-[9px] uppercase font-bold tracking-widest mb-1">Итоговый объем</span>
-                  <span className="text-base font-extrabold text-gray-200 tracking-tight font-mono">
+                  <span className="text-base font-extrabold text-zinc-200 tracking-tight font-mono">
                     {actualTotalCombined} мБ
                   </span>
                 </div>
-                <div className="bg-[#0b0e17] p-3 rounded border border-[#242b3d] text-center">
+                <div className="bg-[#141416] p-3 rounded border border-zinc-805 text-center">
                   <span className="block text-[#8e9bb8] text-[9px] uppercase font-bold tracking-widest mb-1">
                     {hasPinned ? "Точность пропорции" : "Точность объема"}
                   </span>
                   <span className={`text-base font-extrabold tracking-tight font-mono ${
-                    precisionPercent >= 99.9 ? 'text-emerald-400' : 'text-indigo-400'
+                    precisionPercent >= 99.9 ? 'text-emerald-400' : 'text-zinc-300'
                   }`}>
                     {precisionPercent.toFixed(1)}%
                   </span>
@@ -1479,51 +1479,51 @@ export default function App() {
           </section>
 
           {/* Reference guidelines sheet */}
-          <section className="bg-[#0d121fc9] border border-[#242b3d] rounded-xl p-5 shadow-lg select-none">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-3.5 flex items-center gap-2 border-b border-[#242b3d]/65 pb-2.5">
-              <BookOpen className="text-indigo-400 w-4 h-4" /> Справочник пропорций сплавов TFC
+          <section className="bg-[#101012]/80 border border-[#212124] rounded-xl p-5 shadow-lg select-none">
+            <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest mb-3.5 flex items-center gap-2 border-b border-zinc-800 pb-2.5">
+              <BookOpen className="text-zinc-400 w-4 h-4" /> Справочник пропорций сплавов TFC
             </h3>
-            <div className="text-xs text-[#8e9bb8] space-y-1.5 font-sans">
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+            <div className="text-xs text-zinc-400 space-y-1.5 font-sans">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Бронза (Bronze):</span>
-                <strong className="text-indigo-400 text-[11px] font-mono">Медь 70-80% / Олово 20-30%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono">Медь 70-80% / Олово 20-30%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Латунь (Brass TFC):</span>
-                <strong className="text-indigo-400 text-[11px] font-mono">Медь 70-80% / Цинк 20-30%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono">Медь 70-80% / Цинк 20-30%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Красный сплав (Red):</span>
-                <strong className="text-indigo-400 text-[11px] font-mono">Редстоун 75-85% / Медь 15-25%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono">Редстоун 75-85% / Медь 15-25%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Оловянный сплав (Tin):</span>
-                <strong className="text-indigo-400 text-[11px] font-mono">Олово 45-55% / Чугун 45-55%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono">Олово 45-55% / Чугун 45-55%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Инвар (Invar):</span>
-                <strong className="text-indigo-400 text-[11px] font-mono">Никель 30-40% / Чугун 60-70%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono">Никель 30-40% / Чугун 60-70%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Черная бронза:</span>
-                <strong className="text-indigo-400 text-[11px] font-mono flex-wrap text-right">Медь 50-70% / Серебро 10-25% / Золото 10-25%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono flex-wrap text-right">Медь 50-70% / Серебро 10-25% / Золото 10-25%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Висмутовая бронза:</span>
-                <strong className="text-indigo-400 text-[11px] font-mono flex-wrap text-right">Медь 50-65% / Цинк 20-30% / Висмут 10-20%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono flex-wrap text-right">Медь 50-65% / Цинк 20-30% / Висмут 10-20%</strong>
               </p>
-              <p className="flex justify-between border-b border-[#242b3d]/30 pb-2 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between border-b border-zinc-850 pb-2 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Потин (Potin):</span>
-                <strong className="text-indigo-400 text-[11px] font-mono">Медь 63-69% / Олово 19-25% / Свинец 8-14%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono">Медь 63-69% / Олово 19-25% / Свинец 8-14%</strong>
               </p>
-              <p className="flex justify-between pb-1 hover:bg-[#0c0c0e]/35 transition-colors px-1 py-1">
+              <p className="flex justify-between pb-1 hover:bg-zinc-900/35 transition-colors px-1 py-1">
                 <span className="font-bold uppercase tracking-wider text-[10px]">Кобальтовая латунь:</span>
-                <strong className="text-indigo-400 text-[11px] font-mono flex-wrap text-right">Латунь 74-81% / Кобальт 8-14% / Синт.Глина 8-14%</strong>
+                <strong className="text-zinc-300 text-[11px] font-mono flex-wrap text-right">Латунь 74-81% / Кобальт 8-14% / Синт.Глина 8-14%</strong>
               </p>
             </div>
             
-            <div className="mt-4 pt-3 border-t border-[#242b3d]/55 text-[10px] text-slate-500 leading-relaxed flex items-start gap-1.5 font-sans">
-              <Info className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+            <div className="mt-4 pt-3 border-t border-zinc-800 text-[10px] text-zinc-405 leading-relaxed flex items-start gap-1.5 font-sans">
+              <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
               <span>
                 Все пресеты соответствуют официальным рецептам KubeJS и Terrafirmacraft. Значения мБ для каждой пыли можно калибровать прямо во вкладках компонентов.
               </span>
@@ -1535,9 +1535,9 @@ export default function App() {
       </main>
 
       {/* Footer sticky bottom */}
-      <footer className="border-t border-[#1c2438] bg-[#06080e] py-4 text-center text-[10px] text-[#8e9bb8] px-4 flex flex-col sm:flex-row justify-between items-center max-w-7xl mx-auto w-full gap-2 relative z-10">
+      <footer className="border-t border-zinc-800 bg-[#08080a] py-4 text-center text-[10px] text-zinc-400 px-4 flex flex-col sm:flex-row justify-between items-center max-w-7xl mx-auto w-full gap-2 relative z-10">
         <p>© 2026 Калькулятор металлургии GregTech & TFC. Создано для идеального баланса сплавов.</p>
-        <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-wide">Версия 3.3.0 • Локальное сохранение активно</p>
+        <p className="text-[10px] text-zinc-450 font-mono font-bold uppercase tracking-wide">Версия 3.3.0 • Локальное сохранение активно</p>
       </footer>
     </div>
   );
