@@ -214,39 +214,53 @@ export function findPerfectPercentCombinations(
   const validCombos: PerfectCombo[] = [];
 
   function explore(metalIdx: number, currentSumDry: number, componentsDry: number[]) {
-    if (metalIdx === L) {
-      const totalCombinedVolume = currentSumDry + existingVolume;
-      if (totalCombinedVolume >= minSearch && totalCombinedVolume <= maxSearch) {
-        if (totalCombinedVolume % M !== 0) return;
-
-        let allValid = true;
-        const percentages: number[] = [];
-        let totalItems = 0;
-
-        for (let i = 0; i < L; i++) {
-          const val = componentsDry[i];
-          const m = currentMetals[i];
-          const existingVolForMetal = m.isPinned ? 0 : (m.defaultPercent / 100) * existingVolume;
-          const pct = ((val + existingVolForMetal) / totalCombinedVolume) * 100;
-          if (pct < m.minPercent || pct > m.maxPercent) {
-            allValid = false;
-            break;
-          }
-          percentages.push(pct);
-          
-          const solverLookup = reachablePerMetal[i].lookup[val];
-          if (solverLookup) {
-            totalItems += (solverLookup.n + solverLookup.s + solverLookup.t);
-          }
+    // If we are at the last metal, we determine its required volume in O(1) instead of looping over all possible values
+    if (metalIdx === L - 1) {
+      const minV = Math.ceil(minSearch / M) * M;
+      const maxV = Math.floor(maxSearch / M) * M;
+      for (let V = minV; V <= maxV; V += M) {
+        const val = V - existingVolume - currentSumDry;
+        // If the last metal is pinned, its dry volume must match fixedPinnedVolume
+        if (hasPinned && metalIdx === pinnedIdx) {
+          if (val !== fixedPinnedVolume) continue;
         }
-        if (allValid) {
-          validCombos.push({
-            totalVolume: totalCombinedVolume,
-            components: [...componentsDry],
-            percentages,
-            totalItems,
-            deviationScore: 0 // Will adjust below
-          });
+        
+        const lookupVal = reachablePerMetal[metalIdx].lookup[val];
+        if (lookupVal !== undefined) {
+          componentsDry.push(val);
+          
+          let allValid = true;
+          const percentages: number[] = [];
+          let totalItems = 0;
+
+          for (let i = 0; i < L; i++) {
+            const cVal = componentsDry[i];
+            const m = currentMetals[i];
+            const existingVolForMetal = m.isPinned ? 0 : (m.defaultPercent / 100) * existingVolume;
+            const pct = ((cVal + existingVolForMetal) / V) * 100;
+            if (pct < m.minPercent || pct > m.maxPercent) {
+              allValid = false;
+              break;
+            }
+            percentages.push(pct);
+            
+            const solverLookup = reachablePerMetal[i].lookup[cVal];
+            if (solverLookup) {
+              totalItems += (solverLookup.n + solverLookup.s + solverLookup.t);
+            }
+          }
+          
+          if (allValid) {
+            validCombos.push({
+              totalVolume: V,
+              components: [...componentsDry],
+              percentages,
+              totalItems,
+              deviationScore: 0 // Will adjust below
+            });
+          }
+          
+          componentsDry.pop();
         }
       }
       return;

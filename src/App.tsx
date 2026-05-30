@@ -885,11 +885,11 @@ export default function App() {
   // Running dry mass calculations
   const dryNeeded = derivedTargetVolume - existingVolume;
 
-  let perfectOptions: any[] = [];
-  let perfectReachableLookup: any[] = [];
-  let showPerfectModeAlert = false;
+  const perfectSearchData = React.useMemo(() => {
+    if (!perfectMode || derivedTargetVolume <= 0 || dryNeeded < 0) {
+      return { perfectOptions: [], perfectReachableLookup: [], showPerfectModeAlert: false };
+    }
 
-  if (perfectMode && derivedTargetVolume > 0 && dryNeeded >= 0) {
     const searchRes = findPerfectPercentCombinations(
       currentMetals,
       derivedTargetVolume,
@@ -897,13 +897,76 @@ export default function App() {
       existingVolume,
       perfectSortBy
     );
-    perfectOptions = searchRes.validCombos;
-    perfectReachableLookup = searchRes.reachablePerMetal;
-    
-    if (perfectOptions.length === 0) {
-      showPerfectModeAlert = true;
-    }
-  }
+
+    const enrichedOptions = searchRes.validCombos.map((match) => {
+      const subAlloySolvable = currentMetals.map((m, mIdx) => {
+        if (m.isAlloy && m.perfectSubAlloyMode) {
+          const allocatedVol = match.components[mIdx];
+          const subMetalStates = (m.subAlloyComponents || []).map((subM) => ({
+            id: subM.id,
+            name: subM.name,
+            color: subM.color,
+            minPercent: subM.minPercent,
+            maxPercent: subM.maxPercent,
+            defaultPercent: subM.defaultPercent,
+            dustNorm: subM.dustNorm,
+            dustSmall: subM.dustSmall,
+            dustTiny: subM.dustTiny,
+            isPinned: false,
+            pinnedInputType: 'mb' as const,
+            pinnedVolume: 0,
+            pinnedDustNorm: 1,
+            pinnedDustSmall: 0,
+            pinnedDustTiny: 0
+          }));
+          const subMult = m.subAlloyMultiplicity || 144;
+          const subSearchRes = findPerfectPercentCombinations(
+            subMetalStates,
+            allocatedVol,
+            subMult,
+            0,
+            perfectSortBy
+          );
+          return subSearchRes.validCombos.length > 0;
+        }
+        return false;
+      });
+
+      const alloyComponents = currentMetals.filter(m => m.isAlloy && m.perfectSubAlloyMode);
+      const hasAlloys = alloyComponents.length > 0;
+      let allAlloysSolvable = true;
+
+      if (hasAlloys) {
+        for (let mIdx = 0; mIdx < currentMetals.length; mIdx++) {
+          const m = currentMetals[mIdx];
+          if (m.isAlloy && m.perfectSubAlloyMode) {
+            if (!subAlloySolvable[mIdx]) {
+              allAlloysSolvable = false;
+              break;
+            }
+          }
+        }
+      }
+
+      const showDoublePerfect = hasAlloys && allAlloysSolvable;
+
+      return {
+        ...match,
+        subAlloySolvable,
+        showDoublePerfect
+      };
+    });
+
+    const isAlert = enrichedOptions.length === 0;
+
+    return {
+      perfectOptions: enrichedOptions,
+      perfectReachableLookup: searchRes.reachablePerMetal,
+      showPerfectModeAlert: isAlert
+    };
+  }, [perfectMode, currentMetals, derivedTargetVolume, dryNeeded, targetMultiplicity, existingVolume, perfectSortBy]);
+
+  const { perfectOptions, perfectReachableLookup, showPerfectModeAlert } = perfectSearchData;
 
   // Determine current active perfect match if selected
   const activePerfectMatch = (perfectMode && perfectOptions.length > 0) 
@@ -1400,50 +1463,7 @@ export default function App() {
                         return `${currentMetals[i]?.name?.split(' ')[0] || "Металл"}: ${p.toFixed(1)}%`;
                       }).join(' | ');
 
-                      // Check if sub-alloys are perfectly solvable for this option
-                      const alloyComponents = currentMetals.filter(m => m.isAlloy && m.perfectSubAlloyMode);
-                      const hasAlloys = alloyComponents.length > 0;
-                      let allAlloysSolvable = true;
-
-                      if (hasAlloys) {
-                        for (let mIdx = 0; mIdx < currentMetals.length; mIdx++) {
-                          const m = currentMetals[mIdx];
-                          if (m.isAlloy && m.perfectSubAlloyMode) {
-                            const allocatedVol = match.components[mIdx];
-                            const subMetalStates = (m.subAlloyComponents || []).map((subM) => ({
-                              id: subM.id,
-                              name: subM.name,
-                              color: subM.color,
-                              minPercent: subM.minPercent,
-                              maxPercent: subM.maxPercent,
-                              defaultPercent: subM.defaultPercent,
-                              dustNorm: subM.dustNorm,
-                              dustSmall: subM.dustSmall,
-                              dustTiny: subM.dustTiny,
-                              isPinned: false,
-                              pinnedInputType: 'mb' as const,
-                              pinnedVolume: 0,
-                              pinnedDustNorm: 1,
-                              pinnedDustSmall: 0,
-                              pinnedDustTiny: 0
-                            }));
-                            const subMult = m.subAlloyMultiplicity || 144;
-                            const subSearchRes = findPerfectPercentCombinations(
-                              subMetalStates,
-                              allocatedVol,
-                              subMult,
-                              0,
-                              perfectSortBy
-                            );
-                            if (subSearchRes.validCombos.length === 0) {
-                              allAlloysSolvable = false;
-                              break;
-                            }
-                          }
-                        }
-                      }
-
-                      const showDoublePerfect = hasAlloys && allAlloysSolvable;
+                      const showDoublePerfect = match.showDoublePerfect;
 
                       const buttonClass = isSelected 
                         ? 'bg-zinc-100 border-zinc-200 text-zinc-950 shadow-[0_0_12px_rgba(255,255,255,0.15)] font-bold'
@@ -1481,34 +1501,7 @@ export default function App() {
                               Пыль добора:{" "}
                               {match.components.map((c: any, mIdx: number) => {
                                 const m = currentMetals[mIdx];
-                                const isSolvableAlloy = m && m.isAlloy && m.perfectSubAlloyMode && (() => {
-                                  const subMetalStates = (m.subAlloyComponents || []).map((subM) => ({
-                                    id: subM.id,
-                                    name: subM.name,
-                                    color: subM.color,
-                                    minPercent: subM.minPercent,
-                                    maxPercent: subM.maxPercent,
-                                    defaultPercent: subM.defaultPercent,
-                                    dustNorm: subM.dustNorm,
-                                    dustSmall: subM.dustSmall,
-                                    dustTiny: subM.dustTiny,
-                                    isPinned: false,
-                                    pinnedInputType: 'mb' as const,
-                                    pinnedVolume: 0,
-                                    pinnedDustNorm: 1,
-                                    pinnedDustSmall: 0,
-                                    pinnedDustTiny: 0
-                                  }));
-                                  const subMult = m.subAlloyMultiplicity || 144;
-                                  const subSearchRes = findPerfectPercentCombinations(
-                                    subMetalStates,
-                                    c,
-                                    subMult,
-                                    0,
-                                    perfectSortBy
-                                  );
-                                  return subSearchRes.validCombos.length > 0;
-                                })();
+                                const isSolvableAlloy = !!match.subAlloySolvable?.[mIdx];
 
                                 const isLast = mIdx === match.components.length - 1;
                                 let valClass = isSelected ? 'text-zinc-900' : 'text-zinc-300';
