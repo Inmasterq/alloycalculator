@@ -529,15 +529,16 @@ export default function App() {
       subAlloyMultiplicity: 144,
       subAlloyMultiplicityInput: "144",
       subAlloyComponents: subAlloy.metals.map((m: any) => ({
+        ...m,
         id: m.id,
         name: m.name,
-        color: m.color,
-        minPercent: m.minPercent,
-        maxPercent: m.maxPercent,
-        defaultPercent: m.defaultPercent,
-        dustNorm: m.dustNorm,
-        dustSmall: m.dustSmall,
-        dustTiny: m.dustTiny
+        color: m.color || "from-zinc-500 to-slate-700",
+        minPercent: m.minPercent ?? 0,
+        maxPercent: m.maxPercent ?? 100,
+        defaultPercent: m.defaultPercent ?? 50,
+        dustNorm: m.dustNorm ?? 100,
+        dustSmall: m.dustSmall ?? 25,
+        dustTiny: m.dustTiny ?? 10
       }))
     };
 
@@ -815,15 +816,7 @@ export default function App() {
     const newPresetDetails = {
       name: newPresetName.trim(),
       metals: currentMetals.map(m => ({
-        id: m.id,
-        name: m.name,
-        color: m.color,
-        minPercent: m.minPercent,
-        maxPercent: m.maxPercent,
-        defaultPercent: m.defaultPercent,
-        dustNorm: m.dustNorm,
-        dustSmall: m.dustSmall,
-        dustTiny: m.dustTiny
+        ...m
       }))
     };
     const updatedPresets = {

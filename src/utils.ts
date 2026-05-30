@@ -11,12 +11,49 @@ export function getPinnedMetalEquivalentMb(metal: MetalState): number {
 }
 
 export function adjustSumTo100(metals: MetalState[]): MetalState[] {
+  if (metals.length === 0) return [];
   const newMetals = metals.map(m => ({ ...m }));
-  const total = newMetals.reduce((acc, curr) => acc + curr.defaultPercent, 0);
-  const diff = 100 - total;
-  if (diff !== 0 && newMetals.length > 0) {
-    newMetals[0].defaultPercent = Math.max(0, newMetals[0].defaultPercent + diff);
+  
+  let total = newMetals.reduce((acc, curr) => acc + curr.defaultPercent, 0);
+  let diff = 100 - total;
+  
+  if (diff === 0) return newMetals;
+  
+  if (diff > 0) {
+    // We need to add diff. Adding to the first element is a good default.
+    newMetals[0].defaultPercent = Math.min(100, newMetals[0].defaultPercent + diff);
+    // If there's still some leftover (e.g. if the first element was capped), add to others
+    total = newMetals.reduce((acc, curr) => acc + curr.defaultPercent, 0);
+    diff = 100 - total;
+    if (diff > 0) {
+      for (let i = 1; i < newMetals.length; i++) {
+        const canAdd = 100 - newMetals[i].defaultPercent;
+        const add = Math.min(canAdd, diff);
+        newMetals[i].defaultPercent += add;
+        diff -= add;
+        if (diff === 0) break;
+      }
+    }
+  } else {
+    // We need to subtract abs(diff) because the total is greater than 100.
+    // Let's subtract from the first element first
+    const firstVal = newMetals[0].defaultPercent;
+    const firstSubtract = Math.min(firstVal, -diff);
+    newMetals[0].defaultPercent -= firstSubtract;
+    diff += firstSubtract;
+    
+    // If we still need to subtract more, subtract from other elements starting from the second one
+    if (diff < 0) {
+      for (let i = 1; i < newMetals.length; i++) {
+        const val = newMetals[i].defaultPercent;
+        const subtract = Math.min(val, -diff);
+        newMetals[i].defaultPercent -= subtract;
+        diff += subtract;
+        if (diff === 0) break;
+      }
+    }
   }
+  
   return newMetals;
 }
 
@@ -50,7 +87,36 @@ export function balancePercentages(activeIdx: number, metals: MetalState[]): Met
     });
   }
 
-  return adjustSumTo100(newMetals);
+  // Adjust sum to exactly 100 without modifying the active metal
+  const total = newMetals.reduce((acc, curr) => acc + curr.defaultPercent, 0);
+  let diff = 100 - total;
+  if (diff !== 0) {
+    if (diff > 0) {
+      // Find a non-active metal to increase
+      for (let i = 0; i < newMetals.length; i++) {
+        if (i !== activeIdx) {
+          const canAdd = 100 - newMetals[i].defaultPercent;
+          const add = Math.min(canAdd, diff);
+          newMetals[i].defaultPercent += add;
+          diff -= add;
+          if (diff === 0) break;
+        }
+      }
+    } else {
+      // Find non-active metals to decrease
+      for (let i = 0; i < newMetals.length; i++) {
+        if (i !== activeIdx) {
+          const val = newMetals[i].defaultPercent;
+          const subtract = Math.min(val, -diff);
+          newMetals[i].defaultPercent -= subtract;
+          diff += subtract;
+          if (diff === 0) break;
+        }
+      }
+    }
+  }
+
+  return newMetals;
 }
 
 export interface PerfectCombo {
@@ -80,7 +146,7 @@ const serializeMetalsForCache = (metals: MetalState[]): string => {
     const subStr = m.isAlloy && m.subAlloyComponents
       ? m.subAlloyComponents.map(sub => `${sub.id}:${sub.minPercent}:${sub.maxPercent}:${sub.defaultPercent}:${sub.dustNorm}:${sub.dustSmall}:${sub.dustTiny}`).join(',')
       : '';
-    return `${m.id}:${m.minPercent}:${m.maxPercent}:${m.defaultPercent}:${m.isPinned}:${m.pinnedVolume}:${m.dustNorm}:${m.dustSmall}:${m.dustTiny}:${m.isAlloy}:${m.subAlloyMultiplicity}:${subStr}`;
+    return `${m.id}:${m.minPercent}:${m.maxPercent}:${m.defaultPercent}:${m.isPinned}:${m.pinnedVolume}:${m.dustNorm}:${m.dustSmall}:${m.dustTiny}:${m.isAlloy}:${m.subAlloyMultiplicity}:${m.perfectSubAlloyMode}:${m.selectedPerfectSubAlloyMatchIndex}:${subStr}`;
   }).join('|');
 };
 

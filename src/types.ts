@@ -43,17 +43,7 @@ export interface MetalState {
 
 export interface MetalPreset {
   name: string;
-  metals: {
-    id: string;
-    name: string;
-    color: string;
-    minPercent: number;
-    maxPercent: number;
-    defaultPercent: number;
-    dustNorm: number;
-    dustSmall: number;
-    dustTiny: number;
-  }[];
+  metals: Partial<MetalState>[];
 }
 
 export interface AlloyCalcState {
