@@ -18,7 +18,11 @@ import {
   BookOpenCheck,
   ChevronDown,
   Info,
-  RotateCcw
+  RotateCcw,
+  Download,
+  Smartphone,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 
 import { PRESETS } from "./constants";
@@ -49,6 +53,61 @@ export function evaluateMathExpression(expr: string): number | null {
   return null;
 }
 
+const subDustCache = new Map<string, { n: number; s: number; t: number; totalVal: number }>();
+
+// Solve optimal dust counts for a nested sub-alloy ingredient amount
+export function solveDustForSubAmount(targetMb: number, dNorm: number, dSmall: number, dTiny: number) {
+  const cacheKey = `${targetMb}#${dNorm}#${dSmall}#${dTiny}`;
+  if (subDustCache.has(cacheKey)) {
+    return subDustCache.get(cacheKey)!;
+  }
+
+  let bestSol = { n: 0, s: 0, t: 0, totalVal: 0 };
+  let minPenalty = Infinity;
+  
+  if (targetMb <= 0) return bestSol;
+  
+  const maxNorm = dNorm > 0 ? Math.ceil(targetMb / dNorm) + 1 : 0;
+  const maxSmall = dSmall > 0 ? Math.ceil(targetMb / dSmall) + 1 : 0;
+  const maxTiny = dTiny > 0 ? Math.ceil(targetMb / dTiny) + 1 : 0;
+  
+  const limN = dNorm > 0 ? Math.min(maxNorm, 30) : 0;
+  const limS = dSmall > 0 ? Math.min(maxSmall, 30) : 0;
+  const limT = dTiny > 0 ? Math.min(maxTiny, 35) : 0;
+  
+  for (let n = 0; n <= limN; n++) {
+    const valN = n * dNorm;
+    if (dNorm > 0 && valN > targetMb + dNorm) break;
+    
+    for (let s = 0; s <= limS; s++) {
+      const valS = valN + s * dSmall;
+      if (dSmall > 0 && valS > targetMb + dSmall) break;
+      
+      for (let t = 0; t <= limT; t++) {
+        const total = valS + (dTiny > 0 ? t * dTiny : 0);
+        if (dTiny > 0 && total > targetMb + dTiny && Math.abs(total - targetMb) > Math.abs(valS - targetMb) + dTiny) {
+          break;
+        }
+        const absDiff = Math.abs(total - targetMb);
+        let penalty = absDiff + (n + s + t) * 0.1;
+        if (penalty < minPenalty) {
+          minPenalty = penalty;
+          bestSol = { n, s, t, totalVal: total };
+        }
+        if (dTiny <= 0) break;
+      }
+      if (dSmall <= 0) break;
+    }
+    if (dNorm <= 0) break;
+  }
+
+  if (subDustCache.size > 1000) {
+    subDustCache.clear();
+  }
+  subDustCache.set(cacheKey, bestSol);
+  return bestSol;
+}
+
 export default function App() {
   // --- States ---
   const [presets, setPresets] = useState<Record<string, MetalPreset>>(() => {
@@ -77,10 +136,59 @@ export default function App() {
   const [currentMetals, setCurrentMetals] = useState<MetalState[]>([]);
   const [selectedPerfectMatchIndex, setSelectedPerfectMatchIndex] = useState<number | null>(null);
   const [autosaveVisible, setAutosaveVisible] = useState<boolean>(false);
+  const [showAddAlloyState, setShowAddAlloyState] = useState<boolean>(false);
 
   // For Preset Creation Modal
   const [newPresetName, setNewPresetName] = useState<string>("");
   const [showSavePresetDialog, setShowSavePresetDialog] = useState<boolean>(false);
+
+  // --- PWA & Android 16 Offline States ---
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState<boolean>(false);
+  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
+  const [showAndroidInstallGuide, setShowAndroidInstallGuide] = useState<boolean>(false);
+  const [isInstalledApp, setIsInstalledApp] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Detect standalone display mode
+    if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
+      setIsInstalledApp(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handlePwaInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalledApp(true);
+        setIsInstallable(false);
+      }
+      setDeferredPrompt(null);
+    } else {
+      setShowAndroidInstallGuide(true);
+    }
+  };
 
   // --- Load Initial State ---
   useEffect(() => {
@@ -115,6 +223,13 @@ export default function App() {
             dustTinyInput: m.dustTinyInput ?? (m.dustTiny ?? 10).toString(),
             minPercentInput: m.minPercentInput ?? (m.minPercent ?? 0).toString(),
             maxPercentInput: m.maxPercentInput ?? (m.maxPercent ?? 100).toString(),
+            isAlloy: m.isAlloy ?? false,
+            subAlloyKey: m.subAlloyKey ?? "",
+            subAlloyMultiplicity: m.subAlloyMultiplicity ?? 144,
+            subAlloyMultiplicityInput: (m.subAlloyMultiplicityInput ?? m.subAlloyMultiplicity ?? 144).toString(),
+            perfectSubAlloyMode: m.perfectSubAlloyMode ?? false,
+            selectedPerfectSubAlloyMatchIndex: m.selectedPerfectSubAlloyMatchIndex ?? 0,
+            subAlloyComponents: m.subAlloyComponents ?? []
           }));
           setCurrentMetals(parsedMetals);
         } else {
@@ -152,13 +267,15 @@ export default function App() {
         selectedPerfectMatchIndex,
         presets,
       };
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
-      localStorage.setItem("gregtech_tfc_dynamic_presets_v3", JSON.stringify(presets));
-      
-      setAutosaveVisible(true);
-      const flashTimer = setTimeout(() => setAutosaveVisible(false), 1500);
-      return () => clearTimeout(flashTimer);
-    }, 400);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+        localStorage.setItem("gregtech_tfc_dynamic_presets_v3", JSON.stringify(presets));
+        
+        setAutosaveVisible(true);
+      } catch (e) {
+        console.error("Autosave error:", e);
+      }
+    }, 2000); // 2 second debounce to prevent aggressive I/O during slider adjustment
 
     return () => clearTimeout(timer);
   }, [
@@ -177,6 +294,16 @@ export default function App() {
     presets,
   ]);
 
+  // Clean, leak-free autosave visual fadeout effect
+  useEffect(() => {
+    if (autosaveVisible) {
+      const timer = setTimeout(() => {
+        setAutosaveVisible(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [autosaveVisible]);
+
   // Helper setup
   function setupMetalState(metals: any[]): MetalState[] {
     return metals.map(m => ({
@@ -193,6 +320,13 @@ export default function App() {
       dustTinyInput: (m.dustTiny ?? 10).toString(),
       minPercentInput: (m.minPercent ?? 0).toString(),
       maxPercentInput: (m.maxPercent ?? 100).toString(),
+      isAlloy: m.isAlloy ?? false,
+      subAlloyKey: m.subAlloyKey ?? "",
+      subAlloyMultiplicity: m.subAlloyMultiplicity ?? 144,
+      subAlloyMultiplicityInput: (m.subAlloyMultiplicityInput ?? m.subAlloyMultiplicity ?? 144).toString(),
+      perfectSubAlloyMode: m.perfectSubAlloyMode ?? false,
+      selectedPerfectSubAlloyMatchIndex: m.selectedPerfectSubAlloyMatchIndex ?? 0,
+      subAlloyComponents: m.subAlloyComponents ?? []
     }));
   }
 
@@ -336,7 +470,7 @@ export default function App() {
       if (idx === index) {
         let val = m[field];
         const parsed = evaluateMathExpression(valStr);
-        if (parsed !== null && parsed > 0) {
+        if (parsed !== null && parsed >= 0) {
           val = Math.round(parsed);
         }
         return {
@@ -356,7 +490,7 @@ export default function App() {
       if (idx === index) {
         const inputStr = m[`${field}Input` as keyof MetalState] as string;
         const parsed = evaluateMathExpression(inputStr || "");
-        const resolvedVal = parsed !== null && parsed > 0 ? Math.round(parsed) : m[field];
+        const resolvedVal = parsed !== null && parsed >= 0 ? Math.round(parsed) : m[field];
         return {
           ...m,
           [field]: resolvedVal,
@@ -366,6 +500,197 @@ export default function App() {
       return m;
     });
     setCurrentMetals(updated);
+  };
+
+  const handleAddSubAlloyComponent = (presetKey: string) => {
+    const subAlloy = presets[presetKey] || PRESETS[presetKey];
+    if (!subAlloy) return;
+
+    const newMetal: MetalState = {
+      id: `alloy_${Date.now()}`,
+      name: `Сплав: ${subAlloy.name}`,
+      color: "from-amber-500 to-yellow-600",
+      minPercent: 10,
+      maxPercent: 40,
+      defaultPercent: 20,
+      dustNorm: 144,
+      dustSmall: 36,
+      dustTiny: 16,
+      isPinned: false,
+      pinnedInputType: 'mb',
+      pinnedVolume: 144,
+      pinnedDustNorm: 1,
+      pinnedDustSmall: 0,
+      pinnedDustTiny: 0,
+      
+      // Special indicators for sub-alloy
+      isAlloy: true,
+      subAlloyKey: presetKey,
+      subAlloyMultiplicity: 144,
+      subAlloyMultiplicityInput: "144",
+      subAlloyComponents: subAlloy.metals.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        color: m.color,
+        minPercent: m.minPercent,
+        maxPercent: m.maxPercent,
+        defaultPercent: m.defaultPercent,
+        dustNorm: m.dustNorm,
+        dustSmall: m.dustSmall,
+        dustTiny: m.dustTiny
+      }))
+    };
+
+    const newMetalsList = [...currentMetals, newMetal];
+    setSelectedPerfectMatchIndex(0);
+    const balanced = adjustSumTo100(newMetalsList);
+    setCurrentMetals(balanced);
+    setSelectedPresetKey("custom");
+  };
+
+  const handleUpdateSubAlloyMultiplicity = (index: number, valStr: string) => {
+    const updated = currentMetals.map((m, idx) => {
+      if (idx === index) {
+        let mult = m.subAlloyMultiplicity || 144;
+        const parsed = evaluateMathExpression(valStr);
+        if (parsed !== null && parsed > 0) {
+          mult = Math.round(parsed);
+        }
+        return {
+          ...m,
+          subAlloyMultiplicityInput: valStr,
+          subAlloyMultiplicity: mult
+        };
+      }
+      return m;
+    });
+    setCurrentMetals(updated);
+    setSelectedPerfectMatchIndex(0);
+  };
+
+  const handleBlurEvaluateSubAlloyMultiplicity = (index: number) => {
+    const updated = currentMetals.map((m, idx) => {
+      if (idx === index) {
+        const multInput = m.subAlloyMultiplicityInput;
+        const parsed = evaluateMathExpression(multInput || "");
+        const resolvedVal = parsed !== null && parsed > 0 ? Math.round(parsed) : (m.subAlloyMultiplicity || 144);
+        return {
+          ...m,
+          subAlloyMultiplicity: resolvedVal,
+          subAlloyMultiplicityInput: resolvedVal.toString()
+        };
+      }
+      return m;
+    });
+    setCurrentMetals(updated);
+  };
+
+  const handleUpdateSubAlloyConstituentPercent = (metalIndex: number, subComponentId: string, valStr: string) => {
+    const val = Math.max(0, Math.min(100, parseFloat(valStr) || 0));
+    const updated = currentMetals.map((m, idx) => {
+      if (idx === metalIndex && m.isAlloy && m.subAlloyComponents) {
+        let components = m.subAlloyComponents.map(sub => ({ ...sub }));
+        const activeSubIdx = components.findIndex(sub => sub.id === subComponentId);
+        if (activeSubIdx !== -1) {
+          components[activeSubIdx].defaultPercent = val;
+          
+          if (components.length <= 1) {
+            components[0].defaultPercent = 100;
+          } else {
+            const activeSub = components[activeSubIdx];
+            const remainingTarget = 100 - activeSub.defaultPercent;
+            const otherSubSum = components.reduce((acc, curr, sIdx) => {
+              return sIdx !== activeSubIdx ? acc + curr.defaultPercent : acc;
+            }, 0);
+            
+            if (otherSubSum > 0) {
+              components.forEach((sub, sIdx) => {
+                if (sIdx !== activeSubIdx) {
+                  sub.defaultPercent = parseFloat(((sub.defaultPercent / otherSubSum) * remainingTarget).toFixed(2));
+                }
+              });
+            } else {
+              const count = components.length - 1;
+              components.forEach((sub, sIdx) => {
+                if (sIdx !== activeSubIdx) {
+                  sub.defaultPercent = parseFloat((remainingTarget / count).toFixed(2));
+                }
+              });
+            }
+            
+            // Adjust sum to exactly 100
+            const total = components.reduce((acc, curr) => acc + curr.defaultPercent, 0);
+            const diff = 100 - total;
+            if (Math.abs(diff) > 0.001 && components.length > 0) {
+              const targetAdjustIdx = activeSubIdx === 0 ? 1 : 0;
+              if (components[targetAdjustIdx]) {
+                components[targetAdjustIdx].defaultPercent = parseFloat(Math.max(0, components[targetAdjustIdx].defaultPercent + diff).toFixed(2));
+              }
+            }
+          }
+        }
+        return {
+          ...m,
+          subAlloyComponents: components
+        };
+      }
+      return m;
+    });
+    setCurrentMetals(updated);
+    setSelectedPerfectMatchIndex(0);
+  };
+
+  const handleUpdateSubAlloyPercentBound = (metalIndex: number, subComponentId: string, field: 'minPercent' | 'maxPercent', valStr: string) => {
+    const val = Math.max(0, Math.min(100, parseFloat(valStr) || 0));
+    const updated = currentMetals.map((m, idx) => {
+      if (idx === metalIndex && m.isAlloy && m.subAlloyComponents) {
+        const components = m.subAlloyComponents.map(sub => {
+          if (sub.id === subComponentId) {
+            return {
+              ...sub,
+              [field]: val
+            };
+          }
+          return sub;
+        });
+        return {
+          ...m,
+          subAlloyComponents: components
+        };
+      }
+      return m;
+    });
+    setCurrentMetals(updated);
+    setSelectedPerfectMatchIndex(0);
+  };
+
+  const handleToggleSubAlloyPerfectMode = (metalIndex: number, enabled: boolean) => {
+    const updated = currentMetals.map((m, idx) => {
+      if (idx === metalIndex) {
+        return {
+          ...m,
+          perfectSubAlloyMode: enabled,
+          selectedPerfectSubAlloyMatchIndex: 0
+        };
+      }
+      return m;
+    });
+    setCurrentMetals(updated);
+    setSelectedPerfectMatchIndex(0);
+  };
+
+  const handleSelectSubAlloyPerfectMatchIndex = (metalIndex: number, matchIndex: number) => {
+    const updated = currentMetals.map((m, idx) => {
+      if (idx === metalIndex) {
+        return {
+          ...m,
+          selectedPerfectSubAlloyMatchIndex: matchIndex
+        };
+      }
+      return m;
+    });
+    setCurrentMetals(updated);
+    setSelectedPerfectMatchIndex(0);
   };
 
   const handleAddMetal = () => {
@@ -589,11 +914,53 @@ export default function App() {
     derivedTargetVolume = activePerfectMatch.totalVolume;
   }
 
+  const getSubAlloyCalculatedVolume = (metal: MetalState, proposedVolume: number): number => {
+    if (!metal.isAlloy || !metal.perfectSubAlloyMode) {
+      return proposedVolume;
+    }
+    
+    const subMetalStates = (metal.subAlloyComponents || []).map((subM) => ({
+      id: subM.id,
+      name: subM.name,
+      color: subM.color,
+      minPercent: subM.minPercent,
+      maxPercent: subM.maxPercent,
+      defaultPercent: subM.defaultPercent,
+      dustNorm: subM.dustNorm,
+      dustSmall: subM.dustSmall,
+      dustTiny: subM.dustTiny,
+      isPinned: false,
+      pinnedInputType: 'mb' as const,
+      pinnedVolume: 0,
+      pinnedDustNorm: 1,
+      pinnedDustSmall: 0,
+      pinnedDustTiny: 0
+    }));
+
+    const mult = metal.subAlloyMultiplicity || 144;
+    const searchRes = findPerfectPercentCombinations(
+      subMetalStates,
+      proposedVolume,
+      mult,
+      0,
+      perfectSortBy
+    );
+
+    if (searchRes.validCombos.length > 0) {
+      const idx = metal.selectedPerfectSubAlloyMatchIndex ?? 0;
+      const selectedCombo = searchRes.validCombos[idx] || searchRes.validCombos[0];
+      return selectedCombo.totalVolume;
+    }
+
+    return proposedVolume;
+  };
+
   // Building final recipes results structure
   let results: {
     metal: MetalState;
     solution: { norm: number; small: number; tiny: number; totalVal: number };
     targetMb: number;
+    proposedTargetMb: number;
     minPercent: number;
     maxPercent: number;
   }[] = [];
@@ -602,15 +969,17 @@ export default function App() {
     results = currentMetals.map((metal, idx) => {
       const targetMb = activePerfectMatch.components[idx];
       const lookupObj = perfectReachableLookup[idx]?.lookup[targetMb] || { n: 0, s: 0, t: 0 };
+      const finalVolumeVal = getSubAlloyCalculatedVolume(metal, targetMb);
       return {
         metal,
         solution: {
           norm: lookupObj.n,
           small: lookupObj.s,
           tiny: lookupObj.t,
-          totalVal: targetMb
+          totalVal: finalVolumeVal
         },
-        targetMb,
+        targetMb: finalVolumeVal,
+        proposedTargetMb: targetMb,
         minPercent: metal.minPercent,
         maxPercent: metal.maxPercent
       };
@@ -647,29 +1016,46 @@ export default function App() {
         finalMax = val;
       }
 
+      if (m.isAlloy) {
+        const subMult = m.subAlloyMultiplicity || 144;
+        let roundedSubVolume = Math.round(finalTarget / subMult) * subMult;
+        if (roundedSubVolume <= 0 && finalTarget > 0) {
+          roundedSubVolume = subMult;
+        }
+        const finalVolumeVal = getSubAlloyCalculatedVolume(m, roundedSubVolume);
+        return {
+          metal: m,
+          solution: { n: 0, s: 0, t: 0, totalVal: finalVolumeVal },
+          targetMb: finalVolumeVal,
+          proposedTargetMb: roundedSubVolume,
+          minPercent: m.minPercent,
+          maxPercent: m.maxPercent
+        };
+      }
+
       // Loop dust counts to minimize delta
       let bestSol = { n: 0, s: 0, t: 0, totalVal: 0 };
       let minPenalty = Infinity;
 
-      const maxNorm = Math.ceil(Math.max(finalMax, finalTarget) / m.dustNorm) + 2;
-      const maxSmall = Math.ceil(Math.max(finalMax, finalTarget) / m.dustSmall) + 2;
-      const maxTiny = Math.ceil(Math.max(finalMax, finalTarget) / m.dustTiny) + 2;
+      const maxNorm = m.dustNorm > 0 ? Math.ceil(Math.max(finalMax, finalTarget) / m.dustNorm) + 2 : 0;
+      const maxSmall = m.dustSmall > 0 ? Math.ceil(Math.max(finalMax, finalTarget) / m.dustSmall) + 2 : 0;
+      const maxTiny = m.dustTiny > 0 ? Math.ceil(Math.max(finalMax, finalTarget) / m.dustTiny) + 2 : 0;
 
       // Restrict iteration sizes for fast live response
-      const limN = Math.min(maxNorm, 40);
-      const limS = Math.min(maxSmall, 40);
-      const limT = Math.min(maxTiny, 45);
+      const limN = m.dustNorm > 0 ? Math.min(maxNorm, 40) : 0;
+      const limS = m.dustSmall > 0 ? Math.min(maxSmall, 40) : 0;
+      const limT = m.dustTiny > 0 ? Math.min(maxTiny, 45) : 0;
 
       for (let n = 0; n <= limN; n++) {
         const valN = n * m.dustNorm;
-        if (valN > finalMax + m.dustNorm) break;
+        if (m.dustNorm > 0 && valN > finalMax + m.dustNorm) break;
 
         for (let s = 0; s <= limS; s++) {
           const valS = valN + s * m.dustSmall;
-          if (valS > finalMax + m.dustSmall) break;
+          if (m.dustSmall > 0 && valS > finalMax + m.dustSmall) break;
 
           for (let t = 0; t <= limT; t++) {
-            const total = valS + t * m.dustTiny;
+            const total = valS + (m.dustTiny > 0 ? t * m.dustTiny : 0);
             const absDiff = Math.abs(total - finalTarget);
             const insideBounds = total >= finalMin && total <= finalMax;
 
@@ -683,14 +1069,18 @@ export default function App() {
               minPenalty = penalty;
               bestSol = { n, s, t, totalVal: total };
             }
+            if (m.dustTiny <= 0) break;
           }
+          if (m.dustSmall <= 0) break;
         }
+        if (m.dustNorm <= 0) break;
       }
 
       return {
         metal: m,
         solution: bestSol,
         targetMb: finalTarget,
+        proposedTargetMb: finalTarget,
         minPercent: m.minPercent,
         maxPercent: m.maxPercent
       };
@@ -713,17 +1103,46 @@ export default function App() {
     <div className="min-h-screen bg-[#070708] bg-[radial-gradient(circle_at_center,_#141416_0%,_#070708_100%)] text-[#f4f4f5] flex flex-col justify-between font-sans selection:bg-zinc-800 selection:text-white">
       
       {/* Header */}
-      <header className="h-14 border-b border-[#1c1c1f] flex items-center justify-between px-6 bg-[#0c0c0d] sticky top-0 z-50">
-        <div className="flex items-center gap-4">
+      <header className="h-14 border-b border-[#1c1c1f] flex items-center justify-between px-4 sm:px-6 bg-[#0c0c0d] sticky top-0 z-50">
+        <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-zinc-300 shadow-[0_0_8px_#f4f4f5] animate-pulse"></div>
-          <h1 className="text-sm font-black tracking-[0.2em] uppercase text-zinc-100 flex items-center gap-2">
-            Alloy Forge System <span className="text-zinc-500 text-[10px] font-mono tracking-normal lowercase hidden sm:inline">v3.3.0</span>
+          <h1 className="text-xs sm:text-sm font-black tracking-[0.1em] sm:tracking-[0.2em] uppercase text-zinc-100 flex items-center gap-2">
+            Alloy Forge System <span className="text-zinc-500 text-[9px] font-mono tracking-normal lowercase hidden md:inline">v3.3.0</span>
           </h1>
         </div>
-        <div className="flex items-center gap-6 text-[10px] font-mono text-zinc-400">
-          <div className={`flex gap-2 items-center font-bold tracking-wider ${autosaveVisible ? "text-zinc-400" : "text-emerald-400"}`}>
-            <span className={`w-2 h-2 rounded-full ${autosaveVisible ? "bg-zinc-400 animate-ping" : "bg-emerald-500"}`}></span>
-            {autosaveVisible ? "SAVING SESSION..." : "CLOUD CONTAINER SECURE"}
+        
+        <div className="flex items-center gap-3 sm:gap-4 text-[10px] font-mono">
+          {/* Offline/Online Badge */}
+          <div className={`flex gap-1.5 items-center px-2 py-1 rounded bg-[#131315] border ${isOffline ? "border-amber-900/60 text-amber-400" : "border-emerald-900/40 text-emerald-400"} text-[9px] font-bold tracking-wider uppercase`}>
+            {isOffline ? (
+              <>
+                <WifiOff className="w-3 h-3 text-amber-400 animate-pulse" />
+                <span className="hidden xs:inline">Автономно</span>
+              </>
+            ) : (
+              <>
+                <Wifi className="w-3 h-3 text-emerald-450" />
+                <span className="hidden xs:inline">Загружено (ОК)</span>
+              </>
+            )}
+          </div>
+
+          {/* Android PWA Install Trigger */}
+          {!isInstalledApp && (
+            <button
+              type="button"
+              onClick={handlePwaInstall}
+              className="flex items-center gap-1 bg-zinc-100 hover:bg-white text-zinc-950 px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-[0_0_8px_rgba(255,255,255,0.06)] shrink-0"
+              title="Установить на Android 16"
+            >
+              <Download className="w-3 h-3 text-zinc-950" />
+              <span>ДЛЯ ANDROID</span>
+            </button>
+          )}
+
+          <div className="hidden sm:flex items-center gap-2 text-[10px] text-zinc-400 font-bold tracking-wider">
+            <span className={`w-1.5 h-1.5 rounded-full ${autosaveVisible ? "bg-zinc-400 animate-ping" : "bg-emerald-500"}`}></span>
+            {autosaveVisible ? "SAVING..." : "АВТОНОМНОСТЬ АКТИВНА"}
           </div>
         </div>
       </header>
@@ -981,19 +1400,76 @@ export default function App() {
                         return `${currentMetals[i]?.name?.split(' ')[0] || "Металл"}: ${p.toFixed(1)}%`;
                       }).join(' | ');
 
+                      // Check if sub-alloys are perfectly solvable for this option
+                      const alloyComponents = currentMetals.filter(m => m.isAlloy && m.perfectSubAlloyMode);
+                      const hasAlloys = alloyComponents.length > 0;
+                      let allAlloysSolvable = true;
+
+                      if (hasAlloys) {
+                        for (let mIdx = 0; mIdx < currentMetals.length; mIdx++) {
+                          const m = currentMetals[mIdx];
+                          if (m.isAlloy && m.perfectSubAlloyMode) {
+                            const allocatedVol = match.components[mIdx];
+                            const subMetalStates = (m.subAlloyComponents || []).map((subM) => ({
+                              id: subM.id,
+                              name: subM.name,
+                              color: subM.color,
+                              minPercent: subM.minPercent,
+                              maxPercent: subM.maxPercent,
+                              defaultPercent: subM.defaultPercent,
+                              dustNorm: subM.dustNorm,
+                              dustSmall: subM.dustSmall,
+                              dustTiny: subM.dustTiny,
+                              isPinned: false,
+                              pinnedInputType: 'mb' as const,
+                              pinnedVolume: 0,
+                              pinnedDustNorm: 1,
+                              pinnedDustSmall: 0,
+                              pinnedDustTiny: 0
+                            }));
+                            const subMult = m.subAlloyMultiplicity || 144;
+                            const subSearchRes = findPerfectPercentCombinations(
+                              subMetalStates,
+                              allocatedVol,
+                              subMult,
+                              0,
+                              perfectSortBy
+                            );
+                            if (subSearchRes.validCombos.length === 0) {
+                              allAlloysSolvable = false;
+                              break;
+                            }
+                          }
+                        }
+                      }
+
+                      const showDoublePerfect = hasAlloys && allAlloysSolvable;
+
+                      const buttonClass = isSelected 
+                        ? 'bg-zinc-100 border-zinc-200 text-zinc-950 shadow-[0_0_12px_rgba(255,255,255,0.15)] font-bold'
+                        : 'bg-[#141416] border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white';
+
                       return (
                         <button 
                           key={idx}
                           type="button"
                           onClick={() => setSelectedPerfectMatchIndex(idx)}
-                          className={`px-3.5 py-2.5 text-left rounded border transition-all duration-150 flex flex-col justify-center relative overflow-hidden select-none cursor-pointer ${
-                            isSelected 
-                              ? 'bg-zinc-100 border-zinc-200 text-zinc-950 shadow-[0_0_12px_rgba(255,255,255,0.15)] font-bold' 
-                              : 'bg-[#141416] border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
-                          }`}
+                          className={`px-3.5 py-2.5 text-left rounded border transition-all duration-150 flex flex-col justify-center relative overflow-hidden select-none cursor-pointer ${buttonClass}`}
                         >
                           <div className="flex justify-between items-center w-full gap-2">
-                            <span className="text-xs font-bold uppercase tracking-wide">{pctLabel}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold uppercase tracking-wide">{pctLabel}</span>
+                              {showDoublePerfect && (
+                                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border flex items-center gap-1 shrink-0 ${
+                                  isSelected 
+                                    ? 'bg-emerald-100 border-emerald-300 text-emerald-800' 
+                                    : 'bg-emerald-950/35 border-emerald-900/50 text-emerald-400'
+                                }`}>
+                                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+                                  Вложенность OK
+                                </span>
+                              )}
+                            </div>
                             <span className={`text-[9px] px-1.5 py-1 rounded font-bold uppercase shrink-0 ${
                               isSelected ? 'bg-zinc-200/40 text-zinc-950 border border-zinc-300' : 'bg-[#19191c] text-zinc-400 border border-zinc-800'
                             }`}>
@@ -1001,7 +1477,53 @@ export default function App() {
                             </span>
                           </div>
                           <div className="flex justify-between text-[10px] opacity-80 mt-1.5 font-mono">
-                            <span>Пыль добора: {match.components.map((c: any) => c + ' мБ').join(' + ')}</span>
+                            <span>
+                              Пыль добора:{" "}
+                              {match.components.map((c: any, mIdx: number) => {
+                                const m = currentMetals[mIdx];
+                                const isSolvableAlloy = m && m.isAlloy && m.perfectSubAlloyMode && (() => {
+                                  const subMetalStates = (m.subAlloyComponents || []).map((subM) => ({
+                                    id: subM.id,
+                                    name: subM.name,
+                                    color: subM.color,
+                                    minPercent: subM.minPercent,
+                                    maxPercent: subM.maxPercent,
+                                    defaultPercent: subM.defaultPercent,
+                                    dustNorm: subM.dustNorm,
+                                    dustSmall: subM.dustSmall,
+                                    dustTiny: subM.dustTiny,
+                                    isPinned: false,
+                                    pinnedInputType: 'mb' as const,
+                                    pinnedVolume: 0,
+                                    pinnedDustNorm: 1,
+                                    pinnedDustSmall: 0,
+                                    pinnedDustTiny: 0
+                                  }));
+                                  const subMult = m.subAlloyMultiplicity || 144;
+                                  const subSearchRes = findPerfectPercentCombinations(
+                                    subMetalStates,
+                                    c,
+                                    subMult,
+                                    0,
+                                    perfectSortBy
+                                  );
+                                  return subSearchRes.validCombos.length > 0;
+                                })();
+
+                                const isLast = mIdx === match.components.length - 1;
+                                let valClass = isSelected ? 'text-zinc-900' : 'text-zinc-300';
+                                if (isSolvableAlloy) {
+                                  valClass = isSelected ? 'text-emerald-700 font-extrabold' : 'text-emerald-400 font-bold';
+                                }
+
+                                return (
+                                  <React.Fragment key={mIdx}>
+                                    <span className={valClass}>{c} мБ</span>
+                                    {!isLast && <span className={isSelected ? 'text-zinc-400' : 'text-zinc-600'}> + </span>}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </span>
                             <span className={`font-bold ${isSelected ? 'text-zinc-950' : 'text-zinc-400'}`}>
                               Итого: {match.totalVolume} мБ
                             </span>
@@ -1061,16 +1583,55 @@ export default function App() {
 
           {/* Core alloys component card lists */}
           <section className="bg-[#101012] border border-[#212124] rounded-xl p-5 shadow-xl flex-grow relative overflow-hidden">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
               <h2 className="text-xs font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
                 <Settings className="text-zinc-400 w-4 h-4" /> КОМПОНЕНТЫ СПЛАВА
               </h2>
-              <button 
-                onClick={handleAddMetal}
-                className="text-[10px] uppercase tracking-wider bg-zinc-100 text-zinc-950 px-3.5 py-2 rounded font-extrabold hover:bg-white transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_8px_rgba(255,255,255,0.08)]"
-              >
-                <Plus className="w-3.5 h-3.5" /> Добавить металл
-              </button>
+              <div className="flex items-center gap-2 relative">
+                {/* Button for nested alloys templates selection */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowAddAlloyState(!showAddAlloyState)}
+                    className="text-[10px] uppercase tracking-wider bg-[#141416] text-zinc-300 border border-zinc-805 hover:border-zinc-500 px-3 py-2 rounded font-extrabold hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Layers className="w-3.5 h-3.5" /> Добавить сплав
+                  </button>
+                  {showAddAlloyState && (
+                    <div className="absolute right-0 mt-2 w-72 bg-[#121214] border border-zinc-800 rounded-xl p-3 shadow-2xl z-50 max-h-80 overflow-y-auto animate-in fade-in duration-150">
+                      <div className="text-[10px] uppercase font-black text-zinc-400 tracking-wider mb-2 pb-1.5 border-b border-zinc-800/80">Выберите вложенный сплав:</div>
+                      <div className="flex flex-col gap-1.5">
+                        {Object.entries(presets).map(([key, item]) => {
+                          if (key === 'custom') return null;
+                          const presetItem = item as MetalPreset;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => {
+                                handleAddSubAlloyComponent(key);
+                                setShowAddAlloyState(false);
+                              }}
+                              className="text-left py-2 px-2.5 rounded-lg hover:bg-zinc-900 text-zinc-350 hover:text-white transition-all cursor-pointer"
+                            >
+                              <div className="font-bold uppercase tracking-wider text-xs">{presetItem.name}</div>
+                              <div className="text-[9px] text-zinc-500 font-mono mt-0.5">
+                                {presetItem.metals.map(subM => `${subM.name?.split(' ')[0] || "Металл"}: ${subM.defaultPercent}%`).join(' / ')}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={handleAddMetal}
+                  className="text-[10px] uppercase tracking-wider bg-zinc-100 text-zinc-950 px-3.5 py-2 rounded font-extrabold hover:bg-white transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_8px_rgba(255,255,255,0.08)]"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Добавить металл
+                </button>
+              </div>
             </div>
 
             {/* List entries */}
@@ -1086,14 +1647,19 @@ export default function App() {
                 >
                   {/* Top bar controls */}
                   <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-2 border-b border-zinc-800">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className={`w-3.5 h-3.5 rounded-full bg-gradient-to-tr ${metal.color || 'from-[#4b5563] to-[#6b7280]'} shadow`}></span>
                       <input 
                         type="text" 
                         value={metal.name}
                         onChange={(e) => handleUpdateMetalName(index, e.target.value)}
-                        className="bg-transparent border-b border-transparent hover:border-zinc-800 focus:border-zinc-500 text-sm font-bold text-zinc-200 px-1.5 focus:outline-none transition-colors uppercase tracking-wider"
+                        className="bg-transparent border-b border-transparent hover:border-zinc-800 focus:border-zinc-500 text-sm font-bold text-zinc-200 px-1.5 focus:outline-none transition-colors uppercase tracking-wider min-w-[120px]"
                       />
+                      {metal.isAlloy && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-amber-950/40 text-amber-400 border border-amber-900/45 tracking-wider font-mono">
+                          СПЛАВ-ВЛОЖЕНИЕ
+                        </span>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-3">
@@ -1294,63 +1860,339 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Dust volume custom calibration ratios */}
-                  <div className="bg-[#141416] p-3 rounded border border-zinc-805 grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Пыль (1.0)</label>
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          value={metal.dustNormInput ?? metal.dustNorm.toString()} 
-                          onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustNorm', e.target.value)}
-                          onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustNorm')}
-                          className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
-                        />
-                        {evaluateMathExpression(metal.dustNormInput || "") !== null && (metal.dustNormInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
-                            = {Math.round(evaluateMathExpression(metal.dustNormInput || "")!)}
+                  {/* Dust volume custom calibration ratios or Sub-alloy breakdown detail table */}
+                  {metal.isAlloy ? (
+                    <div className="bg-[#141416] p-4 rounded-lg border border-zinc-805 flex flex-col gap-4 animate-in slide-in-from-top-1 duration-200">
+                      {/* Sub-alloy multiplicity config */}
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-[#8e9bb8] flex items-center gap-1.5 matches-zinc">
+                            <Layers className="w-3.5 h-3.5 text-zinc-400" /> Кратность сплава:
+                          </span>
+                          <span className="text-[9px] text-zinc-500 font-mono italic">
+                            Округлить объём до кратности
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="text" 
+                            value={metal.subAlloyMultiplicityInput ?? metal.subAlloyMultiplicity?.toString() ?? "144"}
+                            onChange={(e) => handleUpdateSubAlloyMultiplicity(index, e.target.value)}
+                            onBlur={() => handleBlurEvaluateSubAlloyMultiplicity(index)}
+                            className="bg-[#18181c] border border-zinc-805 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 text-center font-bold font-mono w-20"
+                          />
+                          
+                          <div className="flex gap-1 bg-[#1c1c1f] p-0.5 rounded border border-zinc-850 text-[9px] font-bold font-mono">
+                            {[1, 100, 144, 2016].map((mv) => (
+                              <button
+                                key={mv}
+                                type="button"
+                                onClick={() => {
+                                  const updated = currentMetals.map((m, idx) => idx === index ? { ...m, subAlloyMultiplicity: mv, subAlloyMultiplicityInput: mv.toString() } : m);
+                                  setCurrentMetals(updated);
+                                  setSelectedPerfectMatchIndex(0);
+                                }}
+                                className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                  metal.subAlloyMultiplicity === mv ? 'bg-zinc-100 text-zinc-950 font-black shadow-sm' : 'text-zinc-400 hover:text-white'
+                                }`}
+                              >
+                                {mv}
+                              </button>
+                            ))}
                           </div>
-                        )}
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600 font-bold font-mono">мБ</span>
+                        </div>
+                      </div>
+
+                      {/* Sub-alloy breakdown list */}
+                      <div className="border-t border-zinc-805 pt-3 flex flex-col gap-2.5">
+                        {(() => {
+                          const subIdealVol = results[index]?.proposedTargetMb ?? Math.round((metal.defaultPercent / 100) * derivedTargetVolume);
+                          const subMult = metal.subAlloyMultiplicity || 144;
+                          
+                          // Run sub-alloy perfect search
+                          const subMetalStates = (metal.subAlloyComponents || []).map((subM) => ({
+                            id: subM.id,
+                            name: subM.name,
+                            color: subM.color,
+                            minPercent: subM.minPercent,
+                            maxPercent: subM.maxPercent,
+                            defaultPercent: subM.defaultPercent,
+                            dustNorm: subM.dustNorm,
+                            dustSmall: subM.dustSmall,
+                            dustTiny: subM.dustTiny,
+                            isPinned: false,
+                            pinnedInputType: 'mb' as const,
+                            pinnedVolume: 0,
+                            pinnedDustNorm: 1,
+                            pinnedDustSmall: 0,
+                            pinnedDustTiny: 0
+                          }));
+
+                          const subSearchRes = findPerfectPercentCombinations(
+                            subMetalStates,
+                            subIdealVol,
+                            subMult,
+                            0, // existingVolume
+                            perfectSortBy
+                          );
+
+                          const subPerfectOptions = subSearchRes.validCombos;
+                          const subReachableLookup = subSearchRes.reachablePerMetal;
+                          const hasSubPerfectOptions = subPerfectOptions.length > 0;
+
+                          let subRoundedVol = Math.round(subIdealVol / subMult) * subMult;
+                          if (subRoundedVol <= 0 && subIdealVol > 0) {
+                            subRoundedVol = subMult;
+                          }
+
+                          const activeSubCombo = (metal.perfectSubAlloyMode && hasSubPerfectOptions)
+                            ? (subPerfectOptions[metal.selectedPerfectSubAlloyMatchIndex ?? 0] || subPerfectOptions[0])
+                            : null;
+
+                          if (activeSubCombo) {
+                            subRoundedVol = activeSubCombo.totalVolume;
+                          }
+
+                          return (
+                            <>
+                              {/* Toggle Switch */}
+                              <div className="flex items-center justify-between bg-[#19191c] border border-zinc-805/45 px-3 py-2 rounded-lg mb-1">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5 select-none text-left">
+                                    <Sparkles className="w-3.5 h-3.5" /> Идеальный подбор под-сплава
+                                  </span>
+                                  <span className="text-[8px] text-zinc-500 font-mono text-left">
+                                    Подобрать целый состав кучек под допуски
+                                  </span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer select-none">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={metal.perfectSubAlloyMode || false}
+                                    onChange={(e) => handleToggleSubAlloyPerfectMode(index, e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-8 h-4.5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 after:border-zinc-350 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-zinc-950"></div>
+                                </label>
+                              </div>
+
+                              {/* Selector list for Sub perfect options */}
+                              {metal.perfectSubAlloyMode && (
+                                <div className="bg-[#18181c] border border-zinc-850 p-2.5 rounded-lg mb-1 flex flex-col gap-2">
+                                  <div className="flex justify-between items-center text-[9px] font-bold text-[#8e9bb8] uppercase">
+                                    <span>Точные пропорции под-сплава ({subRoundedVol} мБ):</span>
+                                    <span className="font-mono text-zinc-500">Вариантов: {subPerfectOptions.length}</span>
+                                  </div>
+                                  
+                                  {!hasSubPerfectOptions ? (
+                                    <div className="text-[10px] text-red-400/80 p-2.5 text-center bg-red-950/10 border border-red-900/20 rounded font-mono select-none">
+                                      Невозможно подобрать целые горсти под кратные {subMult} мБ. Измените диапазоны % или кратность.
+                                    </div>
+                                  ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1">
+                                      {subPerfectOptions.slice(0, 20).map((match, optIdx) => {
+                                        const isSelected = optIdx === (metal.selectedPerfectSubAlloyMatchIndex ?? 0);
+                                        const pctLabel = match.percentages.map((p: number, i: number) => {
+                                          return `${metal.subAlloyComponents?.[i]?.name?.split(' ')[0] || "Металл"}: ${p.toFixed(1)}%`;
+                                        }).join(' | ');
+
+                                        return (
+                                          <button
+                                            key={optIdx}
+                                            type="button"
+                                            onClick={() => handleSelectSubAlloyPerfectMatchIndex(index, optIdx)}
+                                            className={`text-left rounded-lg border transition-all text-[10px] flex flex-col justify-center cursor-pointer p-1.5 ${
+                                              isSelected
+                                                ? 'bg-amber-500/15 border-amber-500/50 text-amber-300 font-bold shadow-sm'
+                                                : 'bg-[#141416] border-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-white'
+                                            }`}
+                                          >
+                                            <div className="flex justify-between items-center w-full font-mono">
+                                              <span>Объём: <strong>{match.totalVolume} мБ</strong></span>
+                                              <span>Кучек: {match.totalItems}</span>
+                                            </div>
+                                            <div className="text-[8px] opacity-75 font-mono mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                                              {pctLabel}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-[#8e9bb8]">
+                                <span>Раскладка сплава:</span>
+                                <span className="font-mono text-zinc-300">
+                                  Итого: <strong className="text-amber-400 underline">{subRoundedVol}</strong> мБ (идеально {subIdealVol} мБ)
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-3">
+                                {(metal.subAlloyComponents || []).map((subM, subIdx) => {
+                                  const subTargetMb = activeSubCombo 
+                                    ? activeSubCombo.components[subIdx] 
+                                    : Math.round((subM.defaultPercent / 100) * subRoundedVol);
+                                  
+                                  const lookupObj = (activeSubCombo && subReachableLookup[subIdx]) 
+                                    ? subReachableLookup[subIdx].lookup[subTargetMb] 
+                                    : null;
+                                  
+                                  const subSol = lookupObj 
+                                    ? { n: lookupObj.n, s: lookupObj.s, t: lookupObj.t, totalVal: subTargetMb }
+                                    : solveDustForSubAmount(subTargetMb, subM.dustNorm, subM.dustSmall, subM.dustTiny);
+                                  
+                                  return (
+                                    <div key={subM.id} className="bg-[#18181c] border border-zinc-850 p-3 rounded-lg flex flex-col gap-3">
+                                      {/* Header row containing name, target ml, and solved dust summary */}
+                                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-1.5 border-b border-zinc-900">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`w-2.5 h-2.5 rounded-full bg-gradient-to-tr ${subM.color || 'from-zinc-400 to-zinc-500'} shadow`}></span>
+                                          <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">{subM.name}</span>
+                                        </div>
+                                        
+                                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                                          <span className="text-xs font-bold text-amber-400/90 font-mono">{subTargetMb} мБ</span>
+                                          
+                                          <div className="flex gap-1 text-[10px] font-mono shrink-0 select-none">
+                                            {subSol.n > 0 && <span className="bg-[#242429] text-zinc-300 px-1.5 py-0.5 rounded border border-zinc-700"> {subSol.n} Пыл </span>}
+                                            {subSol.s > 0 && <span className="bg-[#242429] text-zinc-300 px-1.5 py-0.5 rounded border border-zinc-700"> {subSol.s} Мал </span>}
+                                            {subSol.t > 0 && <span className="bg-[#242429] text-zinc-300 px-1.5 py-0.5 rounded border border-zinc-700"> {subSol.t} Крх </span>}
+                                            {subSol.totalVal === 0 && <span className="text-zinc-600 italic text-[9px]">0 мБ</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Sliders and limits configurations */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+                                        {/* Slider & numeric input for Ideal percent of this nested metal */}
+                                        <div className="flex flex-col gap-1">
+                                          <span className="text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8]">Идеальный / Желаемый %</span>
+                                          <div className="flex items-center gap-2">
+                                            <input 
+                                              type="range" 
+                                              min="0" 
+                                              max="100" 
+                                              step="0.5"
+                                              value={subM.defaultPercent} 
+                                              onChange={(e) => handleUpdateSubAlloyConstituentPercent(index, subM.id, e.target.value)}
+                                              className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                            />
+                                            <input 
+                                              type="number" 
+                                              min="0" 
+                                              max="100" 
+                                              step="0.5"
+                                              value={subM.defaultPercent} 
+                                              onChange={(e) => handleUpdateSubAlloyConstituentPercent(index, subM.id, e.target.value)}
+                                              className="w-16 bg-[#141416] border border-zinc-800 rounded text-center px-1 py-0.5 text-xs text-zinc-300 font-bold font-mono"
+                                            />
+                                          </div>
+                                        </div>
+
+                                        {/* Min % and Max % custom settings bounds for nested components */}
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                            <span className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-0.5">Мин %</span>
+                                            <input 
+                                              type="number"
+                                              min="0"
+                                              max="100"
+                                              step="0.5"
+                                              value={subM.minPercent}
+                                              onChange={(e) => handleUpdateSubAlloyPercentBound(index, subM.id, 'minPercent', e.target.value)}
+                                              className="w-full bg-[#141416] border border-zinc-800 rounded text-center py-0.5 text-xs text-zinc-300 font-bold font-mono"
+                                            />
+                                          </div>
+                                          <div>
+                                            <span className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-0.5">Макс %</span>
+                                            <input 
+                                              type="number"
+                                              min="0"
+                                              max="100"
+                                              step="0.5"
+                                              value={subM.maxPercent}
+                                              onChange={(e) => handleUpdateSubAlloyPercentBound(index, subM.id, 'maxPercent', e.target.value)}
+                                              className="w-full bg-[#141416] border border-zinc-800 rounded text-center py-0.5 text-xs text-zinc-300 font-bold font-mono"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Малая кучка</label>
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          value={metal.dustSmallInput ?? metal.dustSmall.toString()} 
-                          onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustSmall', e.target.value)}
-                          onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustSmall')}
-                          className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
-                        />
-                        {evaluateMathExpression(metal.dustSmallInput || "") !== null && (metal.dustSmallInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
-                            = {Math.round(evaluateMathExpression(metal.dustSmallInput || "")!)}
-                          </div>
-                        )}
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600 font-bold font-mono">мБ</span>
+                  ) : (
+                    <div className="bg-[#141416] p-3 rounded border border-zinc-805 grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Пыль (1.0)</label>
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={metal.dustNormInput ?? metal.dustNorm.toString()} 
+                            onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustNorm', e.target.value)}
+                            onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustNorm')}
+                            className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
+                          />
+                          {evaluateMathExpression(metal.dustNormInput || "") !== null && (metal.dustNormInput || "").match(/[+\-*/()]/) && (
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
+                              = {Math.round(evaluateMathExpression(metal.dustNormInput || "")!)}
+                            </div>
+                          )}
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-650 font-bold font-mono">
+                            {metal.dustNorm === 0 ? "выкл" : "мБ"}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Малая кучка</label>
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={metal.dustSmallInput ?? metal.dustSmall.toString()} 
+                            onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustSmall', e.target.value)}
+                            onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustSmall')}
+                            className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
+                          />
+                          {evaluateMathExpression(metal.dustSmallInput || "") !== null && (metal.dustSmallInput || "").match(/[+\-*/()]/) && (
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
+                              = {Math.round(evaluateMathExpression(metal.dustSmallInput || "")!)}
+                            </div>
+                          )}
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-650 font-bold font-mono">
+                            {metal.dustSmall === 0 ? "выкл" : "мБ"}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Крохотная</label>
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            value={metal.dustTinyInput ?? metal.dustTiny.toString()} 
+                            onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustTiny', e.target.value)}
+                            onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustTiny')}
+                            className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
+                          />
+                          {evaluateMathExpression(metal.dustTinyInput || "") !== null && (metal.dustTinyInput || "").match(/[+\-*/()]/) && (
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
+                              = {Math.round(evaluateMathExpression(metal.dustTinyInput || "")!)}
+                            </div>
+                          )}
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-650 font-bold font-mono">
+                            {metal.dustTiny === 0 ? "выкл" : "мБ"}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-[8px] uppercase font-bold tracking-widest text-[#8e9bb8] mb-1">Крохотная</label>
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          value={metal.dustTinyInput ?? metal.dustTiny.toString()} 
-                          onChange={(e) => handleUpdateMetalDustCalibration(index, 'dustTiny', e.target.value)}
-                          onBlur={() => handleBlurEvaluateMetalDustCalibration(index, 'dustTiny')}
-                          className="w-full bg-[#18181c] border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors text-center font-bold font-mono"
-                        />
-                        {evaluateMathExpression(metal.dustTinyInput || "") !== null && (metal.dustTinyInput || "").match(/[+\-*/()]/) && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-[-18px] z-10 text-[8px] font-mono font-bold text-zinc-300 bg-[#121214] px-1 py-0.5 rounded border border-zinc-700 whitespace-nowrap">
-                            = {Math.round(evaluateMathExpression(metal.dustTinyInput || "")!)}
-                          </div>
-                        )}
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600 font-bold font-mono">мБ</span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
 
@@ -1396,7 +2238,113 @@ export default function App() {
                     : 0;
                   const validRatio = ratioPercent >= res.minPercent && ratioPercent <= res.maxPercent;
 
-                  return (
+                  return res.metal.isAlloy ? (
+                    <div key={idx} className="bg-[#141416] border border-amber-900/35 rounded p-4 flex flex-col gap-3.5 relative overflow-hidden ring-1 ring-amber-500/5">
+                      {/* Ambient shine for alloy */}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none blur-xl"></div>
+                      
+                      <div className="flex justify-between items-start gap-2 relative z-10">
+                        <div>
+                          <h4 className="text-xs font-bold text-amber-300 uppercase tracking-widest flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-500 shadow"></span>
+                            {res.metal.name}
+                          </h4>
+                          <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-wider block">
+                            Доля:{" "}
+                            <span className={`font-bold font-mono ${validRatio ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {ratioPercent.toFixed(1)}%
+                            </span>{" "}
+                            <span className="text-zinc-500 text-[9px] tracking-normal font-sans">(Допуск: {res.minPercent}-{res.maxPercent}%)</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-black text-amber-300 font-mono block">
+                            Досыпать: +{sol.totalVal} мБ
+                          </span>
+                          <span className="text-[9px] text-zinc-500 uppercase font-mono font-bold block">
+                            цель: {res.targetMb} мБ
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Sub-alloy inner constituent shopping list */}
+                      <div className="bg-[#18181c] border border-zinc-800 p-2.5 rounded-lg flex flex-col gap-2 relative z-10">
+                        <div className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-1 border-b border-zinc-805/45 pb-1">
+                          Компоненты сплава ({sol.totalVal} мБ)
+                        </div>
+                        
+                        <div className="flex flex-col gap-1.5">
+                          {(() => {
+                            const subMetalStates = (res.metal.subAlloyComponents || []).map((subM) => ({
+                              id: subM.id,
+                              name: subM.name,
+                              color: subM.color,
+                              minPercent: subM.minPercent,
+                              maxPercent: subM.maxPercent,
+                              defaultPercent: subM.defaultPercent,
+                              dustNorm: subM.dustNorm,
+                              dustSmall: subM.dustSmall,
+                              dustTiny: subM.dustTiny,
+                              isPinned: false,
+                              pinnedInputType: 'mb' as const,
+                              pinnedVolume: 0,
+                              pinnedDustNorm: 1,
+                              pinnedDustSmall: 0,
+                              pinnedDustTiny: 0
+                            }));
+
+                            const subSearchRes = findPerfectPercentCombinations(
+                              subMetalStates,
+                              res.proposedTargetMb,
+                              res.metal.subAlloyMultiplicity || 144,
+                              0,
+                              perfectSortBy
+                            );
+
+                            const subPerfectOptions = subSearchRes.validCombos;
+                            const subReachableLookup = subSearchRes.reachablePerMetal;
+                            const hasSubPerfectOptions = subPerfectOptions.length > 0;
+                            const activeSubCombo = (res.metal.perfectSubAlloyMode && hasSubPerfectOptions)
+                              ? (subPerfectOptions[res.metal.selectedPerfectSubAlloyMatchIndex ?? 0] || subPerfectOptions[0])
+                              : null;
+
+                            return (res.metal.subAlloyComponents || []).map((subM, subIdx) => {
+                              const subTargetMb = activeSubCombo 
+                                ? activeSubCombo.components[subIdx] 
+                                : Math.round((subM.defaultPercent / 100) * res.proposedTargetMb);
+
+                              const lookupObj = (activeSubCombo && subReachableLookup[subIdx]) 
+                                ? subReachableLookup[subIdx].lookup[subTargetMb] 
+                                : null;
+
+                              const subSol = lookupObj 
+                                ? { n: lookupObj.n, s: lookupObj.s, t: lookupObj.t }
+                                : solveDustForSubAmount(subTargetMb, subM.dustNorm, subM.dustSmall, subM.dustTiny);
+
+                              return (
+                                <div key={subM.id} className="flex justify-between items-center text-xs py-1 px-1.5 hover:bg-[#202025]/50 rounded transition-colors last:border-0 font-sans">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded bg-gradient-to-tr ${subM.color || 'from-zinc-400 to-zinc-500'}`}></span>
+                                    <span className="text-zinc-200 font-bold uppercase tracking-wider text-[11px]">{subM.name}</span>
+                                    <span className="text-[10px] text-zinc-500 font-mono">({subM.defaultPercent}%)</span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-mono text-zinc-300 text-[11px] shrink-0 font-bold">{subTargetMb} мБ</span>
+                                    <div className="flex gap-1 text-[9px] font-mono select-none shrink-0">
+                                      {subSol.n > 0 && <span className="bg-[#242429] text-[#e4e4e7] px-1 py-0.2 rounded border border-zinc-700 font-medium"> {subSol.n} Пыл </span>}
+                                      {subSol.s > 0 && <span className="bg-[#242429] text-[#e4e4e7] px-1 py-0.2 rounded border border-zinc-700 font-medium"> {subSol.s} Мал </span>}
+                                      {subSol.t > 0 && <span className="bg-[#242429] text-[#e4e4e7] px-1 py-0.2 rounded border border-zinc-700 font-medium"> {subSol.t} Крх </span>}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
                     <div key={idx} className="bg-[#141416] border border-zinc-805 rounded p-4 flex flex-col gap-3">
                       <div className="flex justify-between items-start gap-2">
                         <div>
@@ -1539,6 +2487,77 @@ export default function App() {
         <p>© 2026 Калькулятор металлургии GregTech & TFC. Создано для идеального баланса сплавов.</p>
         <p className="text-[10px] text-zinc-450 font-mono font-bold uppercase tracking-wide">Версия 3.3.0 • Локальное сохранение активно</p>
       </footer>
+
+      {/* Android 16 Installation Guide Popup Modal */}
+      {showAndroidInstallGuide && (
+        <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[#101012] border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowAndroidInstallGuide(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header info */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
+                <Smartphone className="w-6 h-6 text-zinc-300" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-100">Установка на Android 16</h3>
+                <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">100% Автономная работа (Offline)</p>
+              </div>
+            </div>
+
+            {/* Instructions list */}
+            <div className="space-y-4 text-xs text-zinc-300">
+              <p className="leading-relaxed text-zinc-400">
+                Вы можете сохранить этот калькулятор как полноценное Android приложение. Оно будет запускаться напрямую из памяти вашего телефона абсолютно <strong className="text-zinc-100 font-bold">без подключения к интернету</strong>.
+              </p>
+
+              <div className="bg-[#141416]/90 border border-zinc-800 p-4 rounded-xl space-y-3.5">
+                <div className="flex gap-3">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-zinc-800 text-[10px] font-black text-zinc-300 shrink-0">1</span>
+                  <p className="leading-normal">
+                    Откройте панель меню вашего браузера (в Google Chrome нажмите на <strong className="text-white font-bold">три точки •••</strong> в верхнем правом углу).
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-zinc-800 text-[10px] font-black text-zinc-300 shrink-0">2</span>
+                  <p className="leading-normal">
+                    Найдите и выберите опцию <strong className="text-white font-bold">«Добавить на главный экран»</strong> (или <strong className="text-white font-bold">«Установить приложение»</strong>).
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-zinc-800 text-[10px] font-black text-zinc-300 shrink-0">3</span>
+                  <p className="leading-normal">
+                    Подтвердите установку. На вашем устройстве появится полноценное приложение <strong className="text-zinc-100 font-bold">ForgeCalc</strong>, работающее независимо от браузера и сети!
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-zinc-450 leading-relaxed flex gap-2 border-t border-zinc-800 pt-4 mt-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <span>Все рецепты сплавов, калибровка долей, ручные коэффициенты и алгоритмы расчета пыли будут мгновенно доступны прямо в шахте без сети.</span>
+              </div>
+            </div>
+
+            {/* Close trigger action */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowAndroidInstallGuide(false)}
+                className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-extrabold text-xs py-3 rounded-lg uppercase tracking-wider transition-all duration-150 cursor-pointer text-center"
+              >
+                Понятно, продолжить
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

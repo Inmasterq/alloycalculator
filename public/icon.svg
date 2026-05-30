@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1b1c1e" />
+      <stop offset="100%" stop-color="#09090a" />
+    </radialGradient>
+    
+    <!-- Metallic Solder/Silver Gradient -->
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4f4f5" />
+      <stop offset="40%" stop-color="#a1a1aa" />
+      <stop offset="70%" stop-color="#52525b" />
+      <stop offset="100%" stop-color="#27272a" />
+    </linearGradient>
+
+    <!-- Glowing Molten Alloy Gradient -->
+    <linearGradient id="moltenGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ff3b30" />
+      <stop offset="50%" stop-color="#ff9500" />
+      <stop offset="100%" stop-color="#ffcc00" />
+    </linearGradient>
+    
+    <!-- Sparkle Shadow Filter -->
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Outer background shape (squircle) -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bgGrad)" stroke="#27272a" stroke-width="8" />
+
+  <!-- Geometric grid lines for a technical look -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#212124" stroke-width="4" stroke-dasharray="8 8" />
+  <line x1="256" y1="56" x2="256" y2="456" stroke="#212124" stroke-width="2" stroke-dasharray="4 4" />
+  <line x1="56" y1="256" x2="456" y2="256" stroke="#212124" stroke-width="2" stroke-dasharray="4 4" />
+
+  <!-- Shield overlay -->
+  <path d="M 156 120 L 356 120 L 396 230 C 396 330, 256 420, 256 420 C 256 420, 116 330, 116 230 Z" fill="none" stroke="url(#metalGrad)" stroke-width="12" stroke-linejoin="round" />
+
+  <!-- Detailed Crucible pouring molten bronze/alloy -->
+  <g transform="translate(196, 170)">
+    <!-- Molten fluid stream pouring down -->
+    <path d="M 60,70 Q 60,180 60,200 Q 60,210 50,210 Q 40,210 40,200 L 40,70 Z" fill="url(#moltenGrad)" filter="url(#glow)" />
+    
+    <!-- Crucible body (isometric-ish back outline) -->
+    <path d="M 10 30 C 10 70, 110 70, 110 30 C 110 90, 80 120, 60 120 C 40 120, 10 90, 10 30 Z" fill="#18181b" stroke="url(#metalGrad)" stroke-width="8" stroke-linejoin="round" />
+    
+    <!-- Inner molten metal glowing inside crucible -->
+    <ellipse cx="60" cy="30" rx="42" ry="18" fill="url(#moltenGrad)" filter="url(#glow)" stroke="#27272a" stroke-width="2" />
+    
+    <!-- Pouring spout highlights -->
+    <path d="M 18,30 L 40,34 L 40,70 L 15,30" fill="none" stroke="url(#moltenGrad)" stroke-width="2" />
+  </g>
+
+  <!-- Sparks / Forge Magic around pouring stream -->
+  <circle cx="210" cy="340" r="6" fill="#ffcc00" filter="url(#glow)" />
+  <circle cx="290" cy="320" r="4" fill="#ff9500" filter="url(#glow)" />
+  <circle cx="230" cy="390" r="5" fill="#ff3b30" filter="url(#glow)" />
+  <circle cx="275" cy="375" r="3.5" fill="#ffcc00" filter="url(#glow)" />
+
+  <!-- Sparkle stars representing high-precision engineering -->
+  <path d="M 110 110 L 115 125 L 130 125 L 118 135 L 122 150 L 110 140 L 98 150 L 102 135 L 90 125 L 105 125 Z" fill="#ffcc00" filter="url(#glow)" transform="scale(0.8) translate(50, 50)" />
+  <path d="M 110 110 L 115 125 L 130 125 L 118 135 L 122 150 L 110 140 L 98 150 L 102 135 L 90 125 L 105 125 Z" fill="#f4f4f5" transform="scale(0.6) translate(560, 170)" />
+</svg>

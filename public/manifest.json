@@ -1,0 +1,31 @@
+{
+  "short_name": "ForgeCalc",
+  "name": "Alloy Forge - Калькулятор Сплавов GregTech & TFC",
+  "description": "Точный калькулятор сплавов для GregTech и Terrafirmacraft с подбором пропорций пыли и жидких металлов в автономном offline режиме.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#070708",
+  "theme_color": "#101012",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["utilities", "productivity"]
+}

@@ -20,6 +20,25 @@ export interface MetalState {
   dustTinyInput?: string;
   minPercentInput?: string;
   maxPercentInput?: string;
+  
+  // Nested sub-alloy properties
+  isAlloy?: boolean;
+  subAlloyKey?: string;
+  subAlloyMultiplicity?: number;
+  subAlloyMultiplicityInput?: string;
+  perfectSubAlloyMode?: boolean;
+  selectedPerfectSubAlloyMatchIndex?: number;
+  subAlloyComponents?: {
+    id: string;
+    name: string;
+    color: string;
+    minPercent: number;
+    maxPercent: number;
+    defaultPercent: number;
+    dustNorm: number;
+    dustSmall: number;
+    dustTiny: number;
+  }[];
 }
 
 export interface MetalPreset {
