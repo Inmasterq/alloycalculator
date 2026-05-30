@@ -133,21 +133,15 @@ export function findPerfectPercentCombinations(
     return res;
   }
 
-  // 1. Generate reachable exact values for dry components of each metal
+  // 1. Generate reachable exact values for dry components of each metal once up to maxDrySearch
   const reachablePerMetal: ReachablePerMetal[] = currentMetals.map(metal => {
     const lookup: Record<number, SolverLookup> = {};
 
-    const existingVolForMetal = metal.isPinned ? 0 : (metal.defaultPercent / 100) * existingVolume;
-    const minValForMetal = Math.max(0, Math.floor((metal.minPercent / 100) * minSearch - existingVolForMetal));
-    const maxValForMetal = Math.min(maxDrySearch, Math.ceil((metal.maxPercent / 100) * maxSearch - existingVolForMetal));
-    
     if (metal.isAlloy) {
       const mult = metal.subAlloyMultiplicity || 144;
-      // Generate multiples of sub-alloy multiplicity up to maxDrySearch that fit within bounds
+      // Generate multiples of sub-alloy multiplicity up to maxDrySearch
       for (let val = 0; val <= maxDrySearch; val += mult) {
-        if (val >= minValForMetal && val <= maxValForMetal) {
-          lookup[val] = { n: 0, s: 0, t: 0 };
-        }
+        lookup[val] = { n: 0, s: 0, t: 0 };
       }
       return {
         metal,
@@ -160,28 +154,26 @@ export function findPerfectPercentCombinations(
     const maxS = metal.dustSmall > 0 ? Math.ceil(maxDrySearch / metal.dustSmall) + 1 : 0;
     const maxT = metal.dustTiny > 0 ? Math.ceil(maxDrySearch / metal.dustTiny) + 1 : 0;
 
-    // Standard GregTech: 4 small = 1 normal, 9 tiny = 1 normal. No need to loop excessively if normal exists.
-    const limitN = metal.dustNorm > 0 ? Math.min(maxN, 100) : 0;
-    const limitS = metal.dustSmall > 0 ? (metal.dustNorm > 0 ? Math.min(maxS, 3) : Math.min(maxS, 30)) : 0;
-    const limitT = metal.dustTiny > 0 ? (metal.dustNorm > 0 || metal.dustSmall > 0 ? Math.min(maxT, 8) : Math.min(maxT, 35)) : 0;
+    // Use broader limits to find correct answers without excessive search thanks to early breaks
+    const limitN = metal.dustNorm > 0 ? Math.min(maxN, 1200) : 0;
+    const limitS = metal.dustSmall > 0 ? Math.min(maxS, 32) : 0;
+    const limitT = metal.dustTiny > 0 ? Math.min(maxT, 72) : 0;
 
     for (let n = 0; n <= limitN; n++) {
       const valN = n * metal.dustNorm;
-      if (metal.dustNorm > 0 && valN > maxValForMetal) break;
+      if (metal.dustNorm > 0 && valN > maxDrySearch) break;
 
       for (let s = 0; s <= limitS; s++) {
         const valS = valN + s * metal.dustSmall;
-        if (metal.dustSmall > 0 && valS > maxValForMetal) break;
+        if (metal.dustSmall > 0 && valS > maxDrySearch) break;
 
         for (let t = 0; t <= limitT; t++) {
           const val = valS + (metal.dustTiny > 0 ? t * metal.dustTiny : 0);
-          if (metal.dustTiny > 0 && val > maxValForMetal) break;
+          if (metal.dustTiny > 0 && val > maxDrySearch) break;
 
-          if (val >= minValForMetal && val <= maxValForMetal) {
-            const totalPieces = n + s + t;
-            if (!lookup[val] || totalPieces < (lookup[val].n + lookup[val].s + lookup[val].t)) {
-              lookup[val] = { n, s, t };
-            }
+          const totalPieces = n + s + t;
+          if (!lookup[val] || totalPieces < (lookup[val].n + lookup[val].s + lookup[val].t)) {
+            lookup[val] = { n, s, t };
           }
           if (metal.dustTiny <= 0) break;
         }
@@ -196,100 +188,156 @@ export function findPerfectPercentCombinations(
     };
   });
 
-  // Calculate suffix bounds for recursive explorer to prune search paths immediately
-  const L = currentMetals.length;
-  const minSuffix = new Array(L + 1).fill(0);
-  const maxSuffix = new Array(L + 1).fill(0);
-
-  for (let i = L - 1; i >= 0; i--) {
-    const vals = reachablePerMetal[i].values;
-    const minVal = vals.length > 0 ? vals[0] : 0;
-    const maxVal = vals.length > 0 ? vals[vals.length - 1] : 0;
-    
-    minSuffix[i] = minSuffix[i + 1] + minVal;
-    maxSuffix[i] = maxSuffix[i + 1] + maxVal;
+  // Binary search helper to find elements in [min, max]
+  function getValuesInRange(values: number[], min: number, max: number): number[] {
+    if (values.length === 0 || min > max) return [];
+    let low = 0;
+    let high = values.length - 1;
+    let firstIdx = values.length;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (values[mid] >= min) {
+        firstIdx = mid;
+        high = mid - 1;
+      } else {
+        low = mid + 1;
+      }
+    }
+    low = 0;
+    high = values.length - 1;
+    let lastIdx = -1;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (values[mid] <= max) {
+        lastIdx = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    if (firstIdx <= lastIdx) {
+      return values.slice(firstIdx, lastIdx + 1);
+    }
+    return [];
   }
 
-  // 2. Recursive explorer to find dry components combined with existingVolume
+  const L = currentMetals.length;
   const validCombos: PerfectCombo[] = [];
 
-  function explore(metalIdx: number, currentSumDry: number, componentsDry: number[]) {
-    // If we are at the last metal, we determine its required volume in O(1) instead of looping over all possible values
-    if (metalIdx === L - 1) {
-      const minV = Math.ceil(minSearch / M) * M;
-      const maxV = Math.floor(maxSearch / M) * M;
-      for (let V = minV; V <= maxV; V += M) {
-        const val = V - existingVolume - currentSumDry;
-        // If the last metal is pinned, its dry volume must match fixedPinnedVolume
-        if (hasPinned && metalIdx === pinnedIdx) {
-          if (val !== fixedPinnedVolume) continue;
+  // Determine possible values of V (total volume including existingVolume) that are multiples of M
+  const minV = Math.ceil(minSearch / M) * M;
+  const maxV = Math.floor(maxSearch / M) * M;
+
+  let matchesChecked = 0;
+  const maxMatchesAllowed = 10000;
+
+  for (let V = minV; V <= maxV; V += M) {
+    if (matchesChecked >= maxMatchesAllowed) break;
+
+    const targetDry = V - existingVolume;
+    if (targetDry < 0) continue;
+
+    // For this V, filter the valid constructible dry values for each metal
+    const validValsPerMetal: number[][] = [];
+    let possible = true;
+
+    for (let i = 0; i < L; i++) {
+      const m = currentMetals[i];
+      const existingVolForMetal = m.isPinned ? 0 : (m.defaultPercent / 100) * existingVolume;
+
+      let minValForV = Math.max(0, Math.ceil((m.minPercent / 100) * V - existingVolForMetal));
+      let maxValForV = Math.floor((m.maxPercent / 100) * V - existingVolForMetal);
+
+      if (hasPinned && i === pinnedIdx) {
+        if (fixedPinnedVolume < minValForV || fixedPinnedVolume > maxValForV) {
+          possible = false;
+          break;
         }
-        
-        const lookupVal = reachablePerMetal[metalIdx].lookup[val];
-        if (lookupVal !== undefined) {
-          componentsDry.push(val);
-          
-          let allValid = true;
+        minValForV = fixedPinnedVolume;
+        maxValForV = fixedPinnedVolume;
+      }
+
+      if (minValForV > maxValForV) {
+        possible = false;
+        break;
+      }
+
+      const inRange = getValuesInRange(reachablePerMetal[i].values, minValForV, maxValForV);
+      if (inRange.length === 0) {
+        possible = false;
+        break;
+      }
+
+      validValsPerMetal.push(inRange);
+    }
+
+    if (!possible) continue;
+
+    // Precalculate suffix sums for recursive sum solver on the filtered valid sets
+    const minSuffixValid = new Array(L + 1).fill(0);
+    const maxSuffixValid = new Array(L + 1).fill(0);
+    for (let i = L - 1; i >= 0; i--) {
+      const vals = validValsPerMetal[i];
+      minSuffixValid[i] = minSuffixValid[i + 1] + vals[0];
+      maxSuffixValid[i] = maxSuffixValid[i + 1] + vals[vals.length - 1];
+    }
+
+    // Now solve subset-sum backtrack over the extremely reduced state space
+    function solveSum(metalIdx: number, currentSum: number, path: number[]) {
+      if (matchesChecked >= maxMatchesAllowed) return;
+
+      if (metalIdx === L) {
+        if (currentSum === targetDry) {
+          // Verify exact percentages of each component to avoid any rounding/accuracy edge cases
+          let allValidPercentages = true;
           const percentages: number[] = [];
           let totalItems = 0;
 
           for (let i = 0; i < L; i++) {
-            const cVal = componentsDry[i];
+            const val = path[i];
             const m = currentMetals[i];
             const existingVolForMetal = m.isPinned ? 0 : (m.defaultPercent / 100) * existingVolume;
-            const pct = ((cVal + existingVolForMetal) / V) * 100;
+            const pct = ((val + existingVolForMetal) / V) * 100;
             if (pct < m.minPercent || pct > m.maxPercent) {
-              allValid = false;
+              allValidPercentages = false;
               break;
             }
             percentages.push(pct);
-            
-            const solverLookup = reachablePerMetal[i].lookup[cVal];
+
+            const solverLookup = reachablePerMetal[i].lookup[val];
             if (solverLookup) {
               totalItems += (solverLookup.n + solverLookup.s + solverLookup.t);
             }
           }
-          
-          if (allValid) {
+
+          if (allValidPercentages) {
             validCombos.push({
               totalVolume: V,
-              components: [...componentsDry],
+              components: [...path],
               percentages,
               totalItems,
-              deviationScore: 0 // Will adjust below
+              deviationScore: 0
             });
+            matchesChecked++;
           }
-          
-          componentsDry.pop();
         }
+        return;
       }
-      return;
-    }
 
-    if (hasPinned && metalIdx === pinnedIdx) {
-      const val = fixedPinnedVolume;
-      if (currentSumDry + val + minSuffix[metalIdx + 1] <= maxDrySearch &&
-          currentSumDry + val + maxSuffix[metalIdx + 1] >= minSearch - existingVolume) {
-        componentsDry.push(val);
-        explore(metalIdx + 1, currentSumDry + val, componentsDry);
-        componentsDry.pop();
+      const options = validValsPerMetal[metalIdx];
+      for (const val of options) {
+        const nextSum = currentSum + val;
+        if (nextSum + minSuffixValid[metalIdx + 1] > targetDry) break; // since values are sorted, further values will exceed target
+        if (nextSum + maxSuffixValid[metalIdx + 1] < targetDry) continue; // too small to reach target
+
+        path.push(val);
+        solveSum(metalIdx + 1, nextSum, path);
+        path.pop();
       }
-      return;
     }
 
-    const vals = reachablePerMetal[metalIdx].values;
-    for (const val of vals) {
-      const tempSum = currentSumDry + val;
-      if (tempSum + minSuffix[metalIdx + 1] > maxDrySearch) break; // since values are sorted, further values are too large
-      if (tempSum + maxSuffix[metalIdx + 1] < minSearch - existingVolume) continue; // too small to reach minimum
-
-      componentsDry.push(val);
-      explore(metalIdx + 1, tempSum, componentsDry);
-      componentsDry.pop();
-    }
+    solveSum(0, 0, []);
   }
-
-  explore(0, 0, []);
 
   // Calculate deviation and sort
   validCombos.forEach(combo => {
