@@ -22,7 +22,8 @@ import {
   Download,
   Smartphone,
   Wifi,
-  WifiOff
+  WifiOff,
+  Edit3
 } from "lucide-react";
 
 import { PRESETS } from "./constants";
@@ -39,16 +40,105 @@ const LOCAL_STORAGE_KEY = "gregtech_tfc_alloy_calc_state_v3";
 // --- Safe Mathematical Expression Evaluator ---
 export function evaluateMathExpression(expr: string): number | null {
   if (!expr) return null;
-  // Replace comma decimal separators with dots for standard mathematical formatting
-  const clean = expr.replace(/,/g, '.').replace(/[^0-9.+\-*/() ]/g, '').trim();
+  let clean = expr.replace(/,/g, '.').replace(/[^0-9.+\-*/() ]/g, '').trim();
   if (!clean) return null;
+
   try {
-    const result = new Function(`return (${clean})`)();
-    if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
-      return result;
+    const tokens: string[] = [];
+    let i = 0;
+    while (i < clean.length) {
+      const char = clean[i];
+      if (char === ' ') {
+        i++;
+        continue;
+      }
+      if ('0123456789.'.indexOf(char) !== -1) {
+        let numStr = '';
+        while (i < clean.length && '0123456789.'.indexOf(clean[i]) !== -1) {
+          numStr += clean[i];
+          i++;
+        }
+        tokens.push(numStr);
+      } else if ('+-*/()'.indexOf(char) !== -1) {
+        tokens.push(char);
+        i++;
+      } else {
+        return null;
+      }
+    }
+
+    let tokenIdx = 0;
+    const peek = (): string | null => {
+      return tokenIdx < tokens.length ? tokens[tokenIdx] : null;
+    };
+    const get = (): string | null => {
+      return tokenIdx < tokens.length ? tokens[tokenIdx++] : null;
+    };
+
+    const parseFactor = (): number => {
+      const tok = get();
+      if (tok === null) throw new Error("EOF");
+      if (tok === '(') {
+        const val = parseExpression();
+        const closing = get();
+        if (closing !== ')') throw new Error("Expected )");
+        return val;
+      }
+      if (tok === '+') {
+        return parseFactor();
+      }
+      if (tok === '-') {
+        return -parseFactor();
+      }
+      const num = parseFloat(tok);
+      if (isNaN(num)) throw new Error("NaN");
+      return num;
+    };
+
+    const parseTerm = (): number => {
+      let val = parseFactor();
+      while (true) {
+        const op = peek();
+        if (op === '*' || op === '/') {
+          get();
+          const nextVal = parseFactor();
+          if (op === '*') val *= nextVal;
+          else {
+            if (nextVal === 0) throw new Error("DivZero");
+            val /= nextVal;
+          }
+        } else {
+          break;
+        }
+      }
+      return val;
+    };
+
+    const parseExpression = (): number => {
+      let val = parseTerm();
+      while (true) {
+        const op = peek();
+        if (op === '+' || op === '-') {
+          get();
+          const nextVal = parseTerm();
+          if (op === '+') val += nextVal;
+          else val -= nextVal;
+        } else {
+          break;
+        }
+      }
+      return val;
+    };
+
+    const calculated = parseExpression();
+    if (tokenIdx < tokens.length) {
+      throw new Error("Trailing");
+    }
+    if (typeof calculated === 'number' && !isNaN(calculated) && isFinite(calculated)) {
+      return calculated;
     }
   } catch (e) {
-    // Math expression is in-progress or contains syntax issues
+    // Safe fall through
   }
   return null;
 }
@@ -141,6 +231,7 @@ export default function App() {
   // For Preset Creation Modal
   const [newPresetName, setNewPresetName] = useState<string>("");
   const [showSavePresetDialog, setShowSavePresetDialog] = useState<boolean>(false);
+  const [showUpdatedToast, setShowUpdatedToast] = useState<boolean>(false);
 
   // --- PWA & Android 16 Offline States ---
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -546,7 +637,12 @@ export default function App() {
     setSelectedPerfectMatchIndex(0);
     const balanced = adjustSumTo100(newMetalsList);
     setCurrentMetals(balanced);
-    setSelectedPresetKey("custom");
+    
+    // Switch to "custom" only if we are modifying a read-only built-in default preset
+    const isBuiltIn = !!(PRESETS[selectedPresetKey] && selectedPresetKey !== "custom");
+    if (isBuiltIn) {
+      setSelectedPresetKey("custom");
+    }
   };
 
   const handleUpdateSubAlloyMultiplicity = (index: number, valStr: string) => {
@@ -726,7 +822,12 @@ export default function App() {
     setSelectedPerfectMatchIndex(0);
     const balanced = adjustSumTo100(newMetalsList);
     setCurrentMetals(balanced);
-    setSelectedPresetKey("custom");
+    
+    // Switch to "custom" only if we are modifying a read-only built-in default preset
+    const isBuiltIn = !!(PRESETS[selectedPresetKey] && selectedPresetKey !== "custom");
+    if (isBuiltIn) {
+      setSelectedPresetKey("custom");
+    }
   };
 
   const handleRemoveMetal = (index: number) => {
@@ -746,6 +847,12 @@ export default function App() {
       setCurrentMetals([]);
     }
     setSelectedPerfectMatchIndex(0);
+    
+    // Switch to "custom" only if we are modifying a read-only built-in default preset
+    const isBuiltIn = !!(PRESETS[selectedPresetKey] && selectedPresetKey !== "custom");
+    if (isBuiltIn) {
+      setSelectedPresetKey("custom");
+    }
   };
 
   // --- Live Math Formula Input Handlers ---
@@ -827,6 +934,24 @@ export default function App() {
     setSelectedPresetKey(newKey);
     setNewPresetName("");
     setShowSavePresetDialog(false);
+  };
+
+  const handleUpdateActivePreset = () => {
+    if (!selectedPresetKey) return;
+    const updatedPresets = {
+      ...presets,
+      [selectedPresetKey]: {
+        ...presets[selectedPresetKey],
+        metals: currentMetals.map(m => ({
+          ...m
+        }))
+      }
+    };
+    setPresets(updatedPresets);
+    setShowUpdatedToast(true);
+    setTimeout(() => {
+      setShowUpdatedToast(false);
+    }, 2500);
   };
 
   const handleDeletePreset = () => {
@@ -1204,10 +1329,10 @@ export default function App() {
       </header>
  
       {/* Main Core */}
-      <main className="max-w-6xl mx-auto p-4 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 my-4">
+      <main className="max-w-[1400px] mx-auto p-4 w-full flex-grow grid grid-cols-1 xl:grid-cols-12 gap-6 my-4">
         
         {/* Left Grid: Controls and inputs */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
+        <div className="xl:col-span-8 flex flex-col gap-6">
           
           {/* Main settings config card */}
           <section className="bg-[#101012] border border-[#212124] rounded-xl p-5 shadow-xl relative overflow-hidden">
@@ -1232,20 +1357,10 @@ export default function App() {
             </div>
  
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 relative z-10">
-              {/* Preset selection dropdown with Delete and Save buttons */}
+              {/* Preset selection dropdown with Delete, Edit, and Save buttons */}
               <div>
                 <label className="flex items-center justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">
                   <span>ВЫБЕРИТЕ СПЛАВ</span>
-                  <div className="flex gap-2 text-[9px] font-bold text-zinc-400">
-                    <button 
-                      type="button"
-                      onClick={handleRestoreDefaultPresets}
-                      className="hover:underline flex items-center gap-0.5 cursor-pointer text-zinc-300 hover:text-white"
-                      title="Восстановить исходные пресеты сплавов"
-                    >
-                      <RotateCcw className="w-2.5 h-2.5" /> СБРОСИТЬ
-                    </button>
-                  </div>
                 </label>
                 <div className="flex gap-2">
                   <div className="relative flex-grow">
@@ -1274,6 +1389,16 @@ export default function App() {
                     <Trash2 className="w-4 h-4" />
                   </button>
 
+                  {/* Update/Overwrite active preset button */}
+                  <button
+                    type="button"
+                    onClick={handleUpdateActivePreset}
+                    className="px-3 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:border-amber-500/50 hover:text-amber-400 text-zinc-300 rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                    title="Сохранить изменения в текущий сплав (перезаписать)"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+
                   {/* Save current metals as a custom preset button */}
                   <button
                     type="button"
@@ -1284,6 +1409,13 @@ export default function App() {
                     <Save className="w-4 h-4" />
                   </button>
                 </div>
+
+                {/* Save Success feedback toast */}
+                {showUpdatedToast && (
+                  <div className="mt-2 text-[10px] text-emerald-400 font-bold bg-emerald-950/20 border border-emerald-900/40 rounded px-2.5 py-1.5 flex items-center gap-1.5 animate-in fade-in duration-150">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> ИЗМЕНЕНИЯ В СПЛАВЕ СОХРАНЕНЫ!
+                  </div>
+                )}
 
                 {/* Save Preset Dialog modal form */}
                 {showSavePresetDialog && (
@@ -2192,7 +2324,7 @@ export default function App() {
         </div>
 
         {/* Right Grid: Resulting outputs summaries & manuals sheets */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className="xl:col-span-4 flex flex-col gap-6">
           
           {/* Active recipe output stats */}
           <section className="bg-[#101012] border border-[#212124] rounded-xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[420px]">
